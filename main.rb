@@ -40,7 +40,8 @@ get '/:id' do
 end
 
 post '/add' do
-  fetch_shortened_url(params["shortener"]['url'])
+  @url = fetch_shortened_url(params["shortener"]['url'])
+  haml :display
 end
 
 def fetch_shortened_url(url)
@@ -65,7 +66,7 @@ def check_cache(url)
   sha = Digest::SHA1.hexdigest(url)
   short = $redis.hgetall("#{sha}:data")
   unless short == {}
-    $redis.hincrby("#{sha}:data", 'set-count', 1) 
+    $redis.hincrby("#{sha}:data", 'set-count', 1)
     return short['shortened']
   else
     return nil
