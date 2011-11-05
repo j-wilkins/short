@@ -55,6 +55,12 @@ post '/add' do
   haml :display
 end
 
+post '/add.json' do
+  puts "fetching for json"
+  @url = fetch_shortened_url(params["shortener"]['url'])
+  haml :display, :layout => false
+end
+
 def fetch_shortened_url(url)
   id = check_cache(url)
   id ||= shorten(url)

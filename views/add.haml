@@ -1,9 +1,7 @@
-#shortener
-  %form{:name => "shortener", :action => "/add", :method => "post"}
+#shortener.row(style="margin-top: 40px;")
+  %form{:id => 'add-form',:name => "shortener", :action => "/add", :method => "post", :class => 'offset3 form'}
     %label{:for => "shortener[url]"} Url to Shorten:
-    %br
     %input{:type => "text", :name => "shortener[url]", :class => "text"}
-    %br
-    %input{:type => "submit", :value => "Shorten", :class => "button"}
+    %input{:type => "submit", :value => "Shorten", :class => "btn primary"}
 
 
