@@ -11,10 +11,17 @@ set :public_folder, File.join(dir, 'public')
 configure do
   uri = URI.parse(ENV["REDISTOGO_URL"])
   $redis = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
+  $default_url = ENV['DEFAULT_URL'] || '/index'
+end
+
+helpers do
+  def base_url
+    @base_url ||= "#{request.env['rack.url_scheme']}://#{request.env['HTTP_HOST']}"
+  end
 end
 
 get '/' do
-  redirect ENV['DEFAULT_URL'] || '/index'
+  redirect $default_url
 end
 
 get '/add' do
@@ -33,9 +40,13 @@ end
 
 get '/:id' do
   sha = $redis.get(params[:id])
-  url = $redis.hget("#{sha}:data", 'url')
-  $redis.hincrby("#{sha}:data", 'click-count', 1)
-  url.insert(0, 'http://') unless url[0..6] == 'http://'
+  unless sha.nil?
+    url = $redis.hget("#{sha}:data", 'url')
+    $redis.hincrby("#{sha}:data", 'click-count', 1)
+    url.insert(0, 'http://') unless url[0..6] == 'http://'
+  else # we don't have that id
+    url = $default_url
+  end
   redirect url
 end
 
@@ -47,7 +58,7 @@ end
 def fetch_shortened_url(url)
   id = check_cache(url)
   id ||= shorten(url)
-  "http://j-b.us/#{id}"
+  "#{base_url}/#{id}"
 end
 
 def shorten(url)
