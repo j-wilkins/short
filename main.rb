@@ -33,7 +33,8 @@ end
 
 def fetch_shortened_url(url)
   id = shorten(url)
-  "http://#{$url_base}/#{id}"
+  @url = "http://#{$url_base}/#{id}"
+  haml :display
 end
 
 def shorten(url)
