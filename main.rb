@@ -10,7 +10,12 @@ set :public_folder, File.join(dir, 'public')
 configure do
   uri = URI.parse(ENV["REDISTOGO_URL"])
   $redis = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
-  $url_base = ENV['URL_BASE']
+end
+
+helpers do
+  def base_url
+    @base_url ||= "#{request.env['rack.url_scheme']}://#{request.env['HTTP_HOST']}"
+  end
 end
 
 get '/' do
@@ -33,7 +38,7 @@ end
 
 def fetch_shortened_url(url)
   id = shorten(url)
-  @url = "http://#{$url_base}/#{id}"
+  @url = "#{base_url}/#{id}"
   haml :display
 end
 
