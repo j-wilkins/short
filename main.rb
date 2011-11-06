@@ -84,7 +84,7 @@ get '/:id' do
   unless sha.nil?
     url = $redis.hget("#{sha}:data", 'url')
     $redis.hincrby("#{sha}:data", 'click-count', 1)
-    url.insert(0, 'http://') unless url[0..6] == 'http://'
+    url.insert(0, 'http://') unless url[0..6] == 'http://' || url[0..6] == 'https:/'
   else # we don't have that id
     url = $default_url
   end
