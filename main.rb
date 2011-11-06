@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'redis'
 require 'uri'
+require 'json'
 require 'haml'
 require 'digest/sha1'
 
@@ -38,6 +39,17 @@ get '/index' do
   haml :index
 end
 
+get '/delete/:id.json' do
+  delete_short(params[:id])
+  content_type :json
+  {success: true}.to_json
+end
+
+get '/delete/:id' do
+  delete_short(params[:id])
+  redirect :index
+end
+
 get '/:id' do
   sha = $redis.get(params[:id])
   unless sha.nil?
@@ -56,7 +68,6 @@ post '/add' do
 end
 
 post '/add.json' do
-  puts "fetching for json"
   @url = fetch_shortened_url(params["shortener"]['url'])
   haml :display, :layout => false
 end
@@ -88,4 +99,11 @@ def check_cache(url)
   else
     return nil
   end
+end
+
+def delete_short(id)
+  puts "puts deleting #{id}"
+  puts sha = $redis.get(id)
+  $redis.del "#{sha}:data"
+  $redis.del id
 end
