@@ -11,10 +11,11 @@
       - @shortens.each do |short|
         %tr
           %td= short['shortened']
-          %td= short['url'][0..50] + ((short['url'].length > 50) ? '...' : '')
+          %td= short['url'][0..40] + ((short['url'].length > 50) ? '...' : '')
           %td= short['set-count']
           %td= short['click-count']
           %td
             %a{href: "/delete/#{short['shortened']}", class: 'delete-button'}
               %img{src: 'delete-icon.png', alt: 'delete!', width: '16px', height: '16px'}
+          %td= clippy("#{base_url}/#{short['shortened']}")
 
