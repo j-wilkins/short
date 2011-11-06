@@ -11,7 +11,8 @@
       - @shortens.each do |short|
         %tr
           %td= short['shortened']
-          %td= short['url'][0..40] + ((short['url'].length > 50) ? '...' : '')
+          %td
+            %a{href: short['url']}= short['url'][0..40] + ((short['url'].length > 50) ? '...' : '')
           %td= short['set-count']
           %td= short['click-count']
           %td
