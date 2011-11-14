@@ -8,11 +8,17 @@ $(function(){
 
     /* get some values from elements on the page: */
     var $form = $( this ),
-        term = $form.find( 'input[name="shortener[url]"]' ).val(),
+        fUrl = $form.find( 'input[name="shortener[url]"]' ).val(),
+        fMaxClick = $form.find( 'input[name="shortener[max-clicks]"]' ).val(),
+        fExpire = $form.find( 'input[name="shortener[expire]"]' ).val(),
+        fDesiredShort = $form.find( 'input[name="shortener[desired-short]"]' ).val(),
+        fAllowOverride = $form.find( 'input[name="shortener[allow-override]"]' ).is(':checked'),
         url = $form.attr( 'action' );
 
     /* Send the data using post and put the results in a div */
-    $.post( url + '.json', { shortener: {url: term} },
+    $.post( url + '.json', 
+      { shortener: {url: fUrl, 'max-clicks': fMaxClick, expire: fExpire, 
+       'desired-short': fDesiredShort, 'allow-override': fAllowOverride} },
       function( data ) {
         $( "#main" ).append( data );
       }
