@@ -124,17 +124,16 @@ helpers do
     $redis.set(key, sha)
 
     hsh_data = ['shortened', key, 'url', url, 'set-count', 1]
-    hsh_data.concat(['expire', options['expire'].to_i]) if options['expire']
     hsh_data.concat(['max-clicks', options['max-clicks'].to_i]) if options['max-clicks']
-    $redis.hmset("data:#{sha}:#{key}", *hsh_data)
 
     if options['expire'] # set expire time if specified
       ttl = options['expire'].to_i
-      $redis.multi do
-        $redis.expire(sha, ttl)
-        $redis.expire("data:#{sha}:#{key}", ttl)
-      end
+      ttl_key = "expire:#{sha}:#{key}"
+      $redis.set(ttl_key, "#{sha}:#{key}")
+      $redis.expire(ttl_key, ttl)
+      hsh_data.concat(['expire', ttl_key])
     end
+    $redis.hmset("data:#{sha}:#{key}", *hsh_data)
 
     key
   end
@@ -155,8 +154,11 @@ helpers do
   def delete_short(id)
     puts "puts deleting #{id}"
     puts sha = $redis.get(id)
-    $redis.del "data:#{sha}:#{id}"
-    $redis.del id
+    $redis.multi do
+      $redis.del "data:#{sha}:#{id}"
+      $redis.del "expire:#{sha}:#{id}"
+      $redis.del id
+    end
   end
 
   def generate_short
@@ -166,6 +168,17 @@ helpers do
       puts "testing #{key}"
     end while !$redis.get(key).nil?
     key
+  end
+
+  def ttl_display(ttl)
+    if ttl == -1
+      ret = 'expired'
+    elsif ttl == nil
+      ret = '&infin;'
+    else
+      ret = ttl
+    end
+    ret
   end
 
 end
@@ -182,7 +195,9 @@ get '/index' do
   @shortens = Array.new
   $redis.keys('data:*').each do |key|
     p "  fetching data on #{key}"
-    @shortens << $redis.hgetall(key)
+    short = $redis.hgetall(key)
+    short['expire'] = $redis.ttl(short['expire']) if short.has_key?('expire')
+    @shortens << short
   end
   p @shortens
   haml :index
@@ -205,23 +220,17 @@ get '/:id' do
   unless sha.nil?
     key = "data:#{sha}:#{id}"
     short = $redis.hgetall(key)
-    unless short.has_key?('max-clicks')
-      $redis.hincrby(key, 'click-count', 1)
-      url = short['url']
-    else
-      if short['click-count'].to_i < short['max-clicks'].to_i
+    not_expired = short.has_key?('expire') ? $redis.get(short['expire']) : true
+    if not_expired
+      unless short.has_key?('max-clicks') && (short['click-count'].to_i >= short['max-clicks'].to_i)
         $redis.hincrby(key, 'click-count', 1)
         url = short['url']
       else
-        puts "wtf?"
         #delete_short(id) # not sure if we want to delete these yet.
-        url = $default_url
-      end
-    end
-    #url.insert(0, 'http://') unless url[0..6] == 'http://' || url[0..6] == 'https:/'
-  else # we don't have that id
-    url = $default_url
+      end # => max clicks check
+    end # => expired check
   end
+  url ||= $default_url
   redirect url
 end
 
