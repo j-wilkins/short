@@ -3,5 +3,20 @@
     %label{:for => "shortener[url]"} Url to Shorten:
     %input{:type => "text", :name => "shortener[url]", :class => "text"}
     %input{:type => "submit", :value => "Shorten", :class => "btn primary"}
-
-
+    %a{:onClick => '$(".advanced").fadeIn();'} Show Advanced Options
+    %br
+    %label{:for => 'shortener[expire]', :class => 'advanced'} Time till Expired:
+    %input{:type => 'text', :name => 'shortener[expire]', :class => 'text advanced'}
+    %br
+    %label{:for => 'shortener[max-clicks]', :class => 'advanced'} Max Clicks:
+    %input{:type => 'text', :name => 'shortener[max-clicks]', :class => 'text advanced'}
+    %br
+    %label{:for => 'shortener[desired-short]', :class => 'advanced'} Desired Short:
+    %input{:type => 'text', :name => 'shortener[desired-short]', :class => 'text advanced'}
+    %br
+    %label{:for => 'shortener[allow-override]', :class => 'advanced'} Allow Random Override:
+    %input{:type => 'checkbox', :name => 'shortener[allow-override]', :class => 'text advanced', :value => 'true'}
+    :javascript
+      $(function(){
+        $('.advanced').hide();
+      })
