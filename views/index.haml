@@ -17,7 +17,7 @@
           %td= short['set-count']
           %td= short['click-count']
           %td= ttl_display(short['expire'])
-          %td= short['max-clicks']
+          %td= short['max-clicks'] || "&infin;"
           %td
             %a{href: "/delete/#{short['shortened']}", class: 'delete-button'}
               %img{src: 'delete-icon.png', alt: 'delete!', width: '16px', height: '16px'}
