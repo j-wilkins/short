@@ -15,7 +15,7 @@
           %td
             %a{href: short['url']}= short['url'][0..60] + ((short['url'].length > 60) ? '...' : '')
           %td= short['set-count']
-          %td= short['click-count']
+          %td= short['click-count'] || 0
           %td= ttl_display(short['expire'])
           %td= short['max-clicks'] || "&infin;"
           %td
