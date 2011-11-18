@@ -6,20 +6,14 @@ $(function(){
     /* stop form from submitting normally */
     event.preventDefault();
 
-    /* get some values from elements on the page: */
-    var $form = $( this ),
-        fUrl = $form.find( 'input[name="shortener[url]"]' ).val(),
-        fMaxClick = $form.find( 'input[name="shortener[max-clicks]"]' ).val(),
-        fExpire = $form.find( 'input[name="shortener[expire]"]' ).val(),
-        fDesiredShort = $form.find( 'input[name="shortener[desired-short]"]' ).val(),
-        fAllowOverride = $form.find( 'input[name="shortener[allow-override]"]' ).is(':checked'),
-        url = $form.attr( 'action' );
-
+    // my best take so far at scraping form data
+    var formData = {};
+    $.each($(this).serializeArray(), function(i, field) {
+      formData[field.name] = field.value;
+    });
+    
     /* Send the data using post and put the results in a div */
-    $.post( url + '.json', 
-      { shortener: {url: fUrl, 'max-clicks': fMaxClick, expire: fExpire, 
-       'desired-short': fDesiredShort, 'allow-override': fAllowOverride} },
-      function( data ) {
+    $.post( this.action + '.json', formData, function( data ) {
         $( "#main" ).append( data );
       }
     );
