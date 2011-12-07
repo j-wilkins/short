@@ -4,20 +4,27 @@ require 'uri'
 require 'json'
 require 'haml'
 require 'digest/sha1'
+require 'base64'
+require 'active_support/core_ext' # => TODO: do away with this dependency
 
 
+require './env' unless ENV['RACK_ENV'] == 'production'
 dir = File.expand_path(File.dirname(__FILE__))
 set :public_folder, File.join(dir, 'public')
 
 configure do
-  if ENV['RACK_ENV'] == 'production'
-    uri = URI.parse(ENV["REDISTOGO_URL"])
-    _redis = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
-  else
-    _redis = Redis.new
-  end
+  uri = URI.parse(ENV["REDISTOGO_URL"])
+  _redis = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
   $redis = Redis::Namespace.new(:shortener, redis: _redis)
   $default_url = ENV['DEFAULT_URL'] || '/index'
+  $s3_config = {
+    bucket:            ENV['S3_BUCKET'], 
+    key_prefix:        ENV['S3_KEY_PREFIX'],
+    default_acl:       ENV['S3_DEFAULT_ACL'],
+    access_key_id:     ENV['S3_ACCESS_KEY_ID'],
+    secret_access_key: ENV['S3_SECRET_ACCESS_KEY']
+  }
+  p $s3_config
 end
 
 helpers do
@@ -92,25 +99,25 @@ helpers do
         check_key = "data:#{check}:#{options['desired-short']}"
         prev_set = $redis.hgetall(check_key)
 
-        # if we don't expire or have max clicks and previously set key 
+        # if we don't expire or have max clicks and previously set key
         # doesn't expire or have max clicks we can go ahead and use it
         # without any further setup.
         unless options['expire'] || options['max-clicks']
           p prev_set
           puts "options not present. #{prev_set['url']} => #{url}"
           p (prev_set['url'] == url.to_s)
-          if (!prev_set['max-clicks'] && !prev_set['expire'] && 
+          if (!prev_set['max-clicks'] && !prev_set['expire'] &&
             (prev_set['url'] == url.to_s)) # TODO make sure this equality check works.
             puts "made it in if"
             $redis.hincrby(check_key, 'set-count', 1)
-            return options['desired-short'] 
+            return options['desired-short']
           end
         end
-        
+
         if prev_set['max-clicks'].to_i < prev_set['clicks'].to_i
           # previous key is no longer valid, we can assign to it
           key = options['desired-short']
-        else 
+        else
           bad! 'Name is already taken. Use Allow override' unless options['allow-override'] == 'true'
           key = generate_short
         end
@@ -181,6 +188,30 @@ helpers do
     ret
   end
 
+  def s3_policy
+    expiration_date = 10.hours.from_now.utc.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+    max_filesize = 2.gigabyte
+    policy = Base64.encode64(
+      "{'expiration': '#{expiration_date}',
+        'conditions': [
+        {'bucket': '#{$s3_config[:bucket]}'},
+        ['starts-with', '$key', '#{$s3_config[:key_prefix]}'],
+        {'acl': '#{$s3_config[:default_acl]}'},
+        {'success_action_status': '201'},
+        ['starts-with', '$Filename', ''],
+        ['content-length-range', 0, #{max_filesize}]
+        ]
+        }"
+    ).gsub(/\n|\r/, '')
+  end
+
+  def s3_signature(policy)
+    signature = Base64.encode64(OpenSSL::HMAC.digest(
+      OpenSSL::Digest::Digest.new('sha1'),
+      $s3_config[:secret_access_key], policy)
+    ).gsub("\n","")
+  end
+
 end
 
 get '/' do
@@ -212,6 +243,23 @@ end
 get '/delete/:id' do
   delete_short(params[:id])
   redirect :index
+end
+
+get '/upload' do
+  policy = s3_policy
+  signature = s3_signature(policy)
+
+  @post = {
+    "key" => "#{$s3_config[:key_prefix]}/${filename}",
+    "AWSAccessKeyId" => "#{$s3_config[:access_key_id]}",
+    "acl" => "#{$s3_config[:default_acl]}",
+    "policy" => "#{policy}",
+    "signature" => "#{signature}",
+    "success_action_status" => "201"
+  }
+
+  @upload_url = "http://#{$s3_config[:bucket]}.s3.amazonaws.com/"
+  haml :upload
 end
 
 get '/:id' do
