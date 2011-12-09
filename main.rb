@@ -5,7 +5,6 @@ require 'json'
 require 'haml'
 require 'digest/sha1'
 require 'base64'
-require 'active_support/core_ext' # => TODO: do away with this dependency
 
 
 require './env' unless ENV['RACK_ENV'] == 'production'
@@ -18,7 +17,7 @@ configure do
   $redis = Redis::Namespace.new(:shortener, redis: _redis)
   $default_url = ENV['DEFAULT_URL'] || '/index'
   $s3_config = {
-    bucket:            ENV['S3_BUCKET'], 
+    bucket:            ENV['S3_BUCKET'],
     key_prefix:        ENV['S3_KEY_PREFIX'],
     default_acl:       ENV['S3_DEFAULT_ACL'],
     access_key_id:     ENV['S3_ACCESS_KEY_ID'],
@@ -117,7 +116,7 @@ helpers do
         # without any further setup.
         unless options['expire'] || options['max-clicks']
           if (!prev_set['max-clicks'] && !prev_set['expire'] &&
-            (prev_set['url'] == url.to_s)) 
+            (prev_set['url'] == url.to_s))
             $redis.hincrby(check_key, 'set-count', 1)
             return options['desired-short']
           end
@@ -198,8 +197,8 @@ helpers do
   end
 
   def s3_policy
-    expiration_date = 10.hours.from_now.utc.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-    max_filesize = 2.gigabyte
+    expiration_date = (Time.now + 36000).utc.strftime('%Y-%m-%dT%H:%M:%S.000Z') # 10.hours.from_now
+    max_filesize = 2147483648 # 2.gigabyte
     policy = Base64.encode64(
       "{'expiration': '#{expiration_date}',
         'conditions': [
