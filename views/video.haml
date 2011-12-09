@@ -1,7 +1,7 @@
 %link{href: "skin/blue.monday/jplayer.blue.monday.css", rel: 'stylesheet', type: 'text/css'}
 %script{src: 'jquery.jplayer.min.js', type: 'text/javascript'}
 
-#jp_container_1.jp-video.jp-video-360p
+#jp_container_1.jp-video.jp-video-360p.center
   .jp-type-single
     #jquery_jplayer_1.jp-jplayer
     .jp-gui
@@ -53,10 +53,10 @@
 
   $("#jquery_jplayer_1").jPlayer({
     ready: function () {
-      $(this).jPlayer("setMedia", { #{@short['extname']}: "#{@short['url']}" });
+      $(this).jPlayer("setMedia", { #{@short['extension']}: "#{@short['url']}" });
     },
     swfPath: "js",
-    supplied: "#{@short['extname']}",
+    supplied: "#{@short['extension']}",
     size: {
       width: "640px",
       height: "360px",
@@ -64,3 +64,8 @@
     }
   });
 
+:css
+  .center {
+    margin: 0 auto;
+    padding: 0;
+  }

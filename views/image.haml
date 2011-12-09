@@ -1,11 +1,27 @@
 %br
 %br
+:css
+  img {
+    max-width: 100%;
+  }
 
 .row
-  %img{src: @short['url']}
+  %a.center{href: @short['url']}
+    %img{src: @short['url']}
 
 .row
-  %label= @short['name']
+  %p
+    %b Name: 
+    = @short['name']
 
 .row
-  %label= @short['description']
+  %p
+    %b Descrtiption: 
+    %br
+    = @short['description']
+
+:css
+  .center {
+    margin: 0 auto;
+    padding: 0;
+  }

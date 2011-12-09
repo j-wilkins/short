@@ -24,7 +24,6 @@ configure do
     access_key_id:     ENV['S3_ACCESS_KEY_ID'],
     secret_access_key: ENV['S3_SECRET_ACCESS_KEY']
   }
-  p $s3_config
 end
 
 helpers do
@@ -78,12 +77,10 @@ helpers do
       params[k] = false if params[k].nil? || params[k].empty?
     end
 
-    p params
     unless params['max-clicks'] || params['expire'] || params['desired-short']
       id = check_cache(url)
     end
     id ||= shorten(url, params)
-    p id
 
     "#{base_url}/#{id}"
   end
@@ -95,7 +92,8 @@ helpers do
     sha = Digest::SHA1.hexdigest(fname)
     hash_key = "data:#{sha}:#{key}"
     url = "https://s3.amazonaws.com/#{$s3_config[:bucket]}/#{$s3_config[:key_prefix]}/#{fname}"
-    extras = ['url', url, 's3', true, 'shortened', key]
+    ext = File.extname(fname)[1..-1]
+    extras = ['url', url, 's3', true, 'shortened', key, 'extension', ext, 'set-count', 1]
     data = params.keys.map {|k| [k, params[k]] }.flatten.concat(extras)
 
     $redis.set(key, sha)
@@ -106,7 +104,6 @@ helpers do
 
   def shorten(url, options = {})
 
-    puts "shortening"
     unless options['desired-short']
       key = generate_short
     else
@@ -119,12 +116,8 @@ helpers do
         # doesn't expire or have max clicks we can go ahead and use it
         # without any further setup.
         unless options['expire'] || options['max-clicks']
-          p prev_set
-          puts "options not present. #{prev_set['url']} => #{url}"
-          p (prev_set['url'] == url.to_s)
           if (!prev_set['max-clicks'] && !prev_set['expire'] &&
-            (prev_set['url'] == url.to_s)) # TODO make sure this equality check works.
-            puts "made it in if"
+            (prev_set['url'] == url.to_s)) 
             $redis.hincrby(check_key, 'set-count', 1)
             return options['desired-short']
           end
@@ -175,7 +168,7 @@ helpers do
   end
 
   def delete_short(id)
-    puts "puts deleting #{id}"
+    puts "deleting #{id}"
     puts sha = $redis.get(id)
     $redis.multi do
       $redis.del "data:#{sha}:#{id}"
@@ -241,12 +234,11 @@ end
 get '/index' do
   @shortens = Array.new
   $redis.keys('data:*').each do |key|
-    p "  fetching data on #{key}"
     short = $redis.hgetall(key)
     short['expire'] = $redis.ttl(short['expire']) if short.has_key?('expire')
     @shortens << short
+    puts "  url for #{key[-5..-1]} => #{short['url']}"
   end
-  p @shortens
   haml :index
 end
 
@@ -296,31 +288,31 @@ get '/:id' do
       else
         $redis.hincrby(key, 'click-count', 1)
         @short = short
-        @short['extname'] = File.extname(@short['file_name'])
-        @short['extname'].slice!(0)
-        puts "\n\n#{@short.inspect}\n"
-        return ret = haml(short['type'].to_sym)
+        puts "rendering view for s3 content. #{id} => #{short['url']}"
+        return haml(short['type'].to_sym, {layout: :'content-layout'})
       end
     end # => expired check
   end
   url ||= $default_url
+  puts "redirecting #{id} to #{url}"
   redirect url
 end
 
 post '/upload' do
-  p params
   content_type :json
   short = set_upload_short(params['shortener'])
+  puts "set #{short} to #{params['shortener']['file_name']}"
   {url: short}.to_json
 end
 
 post '/add' do
   @url = set_or_fetch_url(params["shortener"])
+  puts "set #{@url} to #{params['shortener']['url']}"
   haml :display
 end
 
 post '/add.json' do
   @url = set_or_fetch_url(params["shortener"])
-  p @url
+  puts "set #{@url} to #{params['shortener']['url']}"
   haml :display, :layout => false
 end
