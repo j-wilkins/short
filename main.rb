@@ -88,6 +88,22 @@ helpers do
     "#{base_url}/#{id}"
   end
 
+  def set_upload_short(params)
+    bad! 'Missing content type.' unless type = params['type']
+    key = generate_short
+    fname = params['file_name'].gsub(' ', '+')
+    sha = Digest::SHA1.hexdigest(fname)
+    hash_key = "data:#{sha}:#{key}"
+    url = "https://s3.amazonaws.com/#{$s3_config[:bucket]}/#{$s3_config[:key_prefix]}/#{fname}"
+    extras = ['url', url, 's3', true, 'shortened', key]
+    data = params.keys.map {|k| [k, params[k]] }.flatten.concat(extras)
+
+    $redis.set(key, sha)
+    $redis.hmset(hash_key, *data)
+
+    "#{base_url}/#{key}"
+  end
+
   def shorten(url, options = {})
 
     puts "shortening"
@@ -270,16 +286,32 @@ get '/:id' do
     short = $redis.hgetall(key)
     not_expired = short.has_key?('expire') ? $redis.get(short['expire']) : true
     if not_expired
-      unless short.has_key?('max-clicks') && (short['click-count'].to_i >= short['max-clicks'].to_i)
-        $redis.hincrby(key, 'click-count', 1)
-        url = short['url']
+      unless short['s3'] == 'true'
+        unless short.has_key?('max-clicks') && (short['click-count'].to_i >= short['max-clicks'].to_i)
+          $redis.hincrby(key, 'click-count', 1)
+          url = short['url']
+        else
+          #delete_short(id) # not sure if we want to delete these yet.
+        end # => max clicks check
       else
-        #delete_short(id) # not sure if we want to delete these yet.
-      end # => max clicks check
+        $redis.hincrby(key, 'click-count', 1)
+        @short = short
+        @short['extname'] = File.extname(@short['file_name'])
+        @short['extname'].slice!(0)
+        puts "\n\n#{@short.inspect}\n"
+        return ret = haml(short['type'].to_sym)
+      end
     end # => expired check
   end
   url ||= $default_url
   redirect url
+end
+
+post '/upload' do
+  p params
+  content_type :json
+  short = set_upload_short(params['shortener'])
+  {url: short}.to_json
 end
 
 post '/add' do
