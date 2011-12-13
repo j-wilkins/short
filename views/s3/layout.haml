@@ -9,8 +9,15 @@
 
     #main.container(style="margin-top: 40px;")
       = yield
+      .row
+        %a.center{href: "#{@short['url']}"} Download
 :css
   body {
     background-color: #787171;
+  }
+
+  .center {
+    margin: 0 auto;
+    padding: 0;
   }
 

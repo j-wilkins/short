@@ -277,7 +277,7 @@ get '/:id' do
     short = $redis.hgetall(key)
     not_expired = short.has_key?('expire') ? $redis.get(short['expire']) : true
     if not_expired
-      unless short['s3'] == 'true'
+      unless short['s3'] == 'true' && !(short['type'] == 'download')
         unless short.has_key?('max-clicks') && (short['click-count'].to_i >= short['max-clicks'].to_i)
           $redis.hincrby(key, 'click-count', 1)
           url = short['url']
@@ -288,7 +288,7 @@ get '/:id' do
         $redis.hincrby(key, 'click-count', 1)
         @short = short
         puts "rendering view for s3 content. #{id} => #{short['url']}"
-        return haml(short['type'].to_sym, {layout: :'content-layout'})
+        return haml(:"s3/#{short['type']}", layout: :'s3/layout')
       end
     end # => expired check
   end
