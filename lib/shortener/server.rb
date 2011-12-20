@@ -70,7 +70,6 @@ module Shortener
       end
 
       def set_or_fetch_url(params)
-
         bad! 'Missing url.' unless url = params['url']
         url = "http://#{url}" unless /^http/i =~ url
         bad! 'Malformed url.' unless (url = URI.parse(url)) && /^http/ =~ url.scheme
@@ -225,6 +224,10 @@ module Shortener
 
     end
 
+    before do
+      params
+    end
+
     get '/' do
       redirect $default_url
     end
@@ -312,11 +315,18 @@ module Shortener
     end
 
     post '/add.?:format?' do |format|
+      begin
+        # TODO figure out why the fuck these are parsing from Net::HTTP
+        params['shortener'] = JSON.parse(params['shortener']) if params['shortener'].is_a?(String)
+      rescue Exception => boom
+        # essentally, params = params
+      end
+
       @url = set_or_fetch_url(params["shortener"])
       puts "set #{@url} to #{params['shortener']['url']}"
       if format == 'json'
         content_type :json
-        {data: :success, html: haml(:display, :layout => false)}.to_json
+        {data: :success, short: @url, html: haml(:display, :layout => false)}.to_json
       else
         haml :display
       end
