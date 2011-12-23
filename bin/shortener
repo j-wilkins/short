@@ -60,15 +60,40 @@ shorts: #{index.length}
 EOD
 end
 
+def do_action(act, arg)
+  unless arg.nil?
+    send(act, arg)
+  else
+    usage
+  end
+end
+
+def usage
+  puts <<EOU
+  Usage: shortener COMMAND <arg>
+
+  a command could be:
+    shorten:  get a shortened version of <arg>.
+    fetch:    get data for <arg> which should be a short.
+    index:    show summary data for all shorts.
+
+  the default command is shorten, so that one could
+    
+     shortener www.google.com
+
+  and the result would be a short for www.google.com
+EOU
+end
+
 case ARGV[0]
 when 'shorten'
-  shorten(ARGV[1])
+  do_action(:shorten, ARGV[1])
 when 'fetch'
-  fetch(ARGV[1])
+  do_action(:fetch, ARGV[1])
 when 'server'
   start_web
 when 'index'
   show_index
 else
-  puts "this shit don't work"
+  do_action(:shorten, ARGV[1])
 end
