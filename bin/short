@@ -82,19 +82,20 @@ end
 
 def usage
   puts <<EOU
-  Usage: shortener COMMAND <arg>
+  Usage: short COMMAND <arg>
 
   a command could be:
-    server:   start an instance of the shortener server locally.
     shorten:  get a shortened version of <arg>.
     fetch:    get data for <arg> which should be a short.
     delete:   delete a short from the index.
     index:    show summary data for all shorts.
+
     rake:     run a shortener rake task. [heroku:build, heroku:setup...]
+    server:   start an instance of the shortener server locally.
 
   the default command is shorten, so that one could
 
-     shortener www.google.com
+     short www.google.com
 
   and the result would be a short for www.google.com
 EOU

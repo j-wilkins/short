@@ -5,11 +5,11 @@ require "shortener/version"
 Gem::Specification.new do |s|
   s.name        = "short"
   s.version     = Shortener::VERSION
-  s.authors     = ["jake"]
-  s.email       = ["jake.wilkins@adfitech.com"]
+  s.authors     = ["Jake Wilkins"]
+  s.email       = ["jake@jakewilkins.com"]
   s.homepage    = ""
-  s.summary     = %q{Link Shortener}
-  s.description = %q{A (hopefully) easy and handy way to shorten links.}
+  s.summary     = %q{A Link Shortener}
+  s.description = %q{A (hopefully) easy and handy deployable APIable way to shorten links.}
 
   #s.rubyforge_project = "shortener"
 
@@ -19,6 +19,9 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   # specify any dependencies here; for example:
+   s.add_development_dependency "sinatra"
+   s.add_development_dependency "redis-namespace"
+   s.add_development_dependency "haml"
    s.add_development_dependency "turn"
    #s.add_runtime_dependency "rest-client"
 end
