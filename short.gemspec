@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 require "shortener/version"
 
 Gem::Specification.new do |s|
-  s.name        = "shortener"
+  s.name        = "short"
   s.version     = Shortener::VERSION
   s.authors     = ["jake"]
   s.email       = ["jake.wilkins@adfitech.com"]
@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.summary     = %q{Link Shortener}
   s.description = %q{A (hopefully) easy and handy way to shorten links.}
 
-  s.rubyforge_project = "shortener"
+  #s.rubyforge_project = "shortener"
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
