@@ -8,7 +8,7 @@ require 'base64'
 
 
 
-module Shortener
+class Shortener
   class Server < Sinatra::Base
     dir = File.expand_path(File.dirname(__FILE__))
     set :root,          File.join(dir, 'server')
@@ -236,13 +236,17 @@ module Shortener
       haml :add
     end
 
-    get '/index' do
+    get '/index.?:format?' do
       @shortens = Array.new
       $redis.keys('data:*').each do |key|
         short = $redis.hgetall(key)
         short['expire'] = $redis.ttl(short['expire']) if short.has_key?('expire')
         @shortens << short
         puts "  url for #{key[-5..-1]} => #{short['url']}"
+      end
+      if params[:format] == 'json'
+        content_type :json
+        return @shortens.to_json
       end
       haml :index
     end
@@ -275,32 +279,38 @@ module Shortener
       haml :upload
     end
 
-    get '/:id' do
-      id = params[:id]
+    #get '/:id.?:format?' do
+    get %r{\/([a-z0-9]{5})(\.[a-z]{3,}){0,1}}i do
+      id = params[:captures].first
       sha = $redis.get(id)
       unless sha.nil?
         key = "data:#{sha}:#{id}"
         short = $redis.hgetall(key)
         not_expired = short.has_key?('expire') ? $redis.get(short['expire']) : true
-        if not_expired
-          unless short['s3'] == 'true' && !(short['type'] == 'download')
-            unless short.has_key?('max-clicks') && (short['click-count'].to_i >= short['max-clicks'].to_i)
-              $redis.hincrby(key, 'click-count', 1)
-              url = short['url']
+        not_maxed = !(short['click-count'].to_i >= short['max-clicks'].to_i)
+        short.has_key?('max-clicks') ? not_maxed : not_maxed = true
+        $redis.hincrby(key, 'click-count', 1) if not_expired && not_maxed
+        if params[:captures].last == '.json'
+          ret = short.merge({expired: not_expired.nil? , maxed: !not_maxed})
+          content_type :json
+          return ret.to_json
+        else
+          if not_expired
+            unless short['s3'] == 'true' && !(short['type'] == 'download')
+              if not_maxed
+                puts "redirecting #{id} to #{url}"
+                redirect short['url']
+              end # => max clicks check
             else
-              #delete_short(id) # not sure if we want to delete these yet.
-            end # => max clicks check
-          else
-            $redis.hincrby(key, 'click-count', 1)
-            @short = short
-            puts "rendering view for s3 content. #{id} => #{short['url']}"
-            return haml(:"s3/#{short['type']}", layout: :'s3/layout')
-          end
-        end # => expired check
+              @short = short
+              puts "rendering view for s3 content. #{id} => #{short['url']}"
+              return haml(:"s3/#{short['type']}", layout: :'s3/layout')
+            end # => it's S3 and needs displaying.
+          end # => expired check
+        end # => format
       end
-      url ||= $default_url
-      puts "redirecting #{id} to #{url}"
-      redirect url
+      puts "redirecting to default url"
+      redirect $default_url
     end
 
     post '/upload.?:format?' do |format|

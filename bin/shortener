@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
+
+require 'shortener/client'
+
+def start_web
+  begin
+    require 'vegas'
+  rescue LoadError
+    require 'rubygems'
+    require 'vegas'
+  end
+  require 'shortener/server'
+
+
+  Vegas::Runner.new(Shortener::Server, 'shortener-server', {
+    :before_run => lambda {|v|
+      path = (ENV['SHORTENER_CONFIG'] || v.args.first)
+      #load path.to_s.strip if path
+    }
+  }) do |runner, opts, app|
+    #opts.on('-H HOST', "--host HOST", "set the Redis host") {|host|
+      #runner.logger.info "Using Redis host '#{host}'"
+      #Resque.redis = host
+    #}
+  end
+end
+
+def shorten(url)
+  puts Shortener::Client.new.shorten(url)['short']
+end
+
+def fetch(url)
+  if url =~ /http:/
+    url = url[-6..-1]
+  end
+  fetched = Shortener::Client.new.fetch(url)
+  puts <<-EOF
+  short       => #{fetched['shortened']}
+  url         => #{fetched['url']}
+  set-count   => #{fetched['set-count']}
+  click-count => #{fetched['click-count']}
+  expired     => #{fetched['expired']}
+  maxed       => #{fetched['maxed']}
+EOF
+end
+
+def show_index
+  index = Shortener::Client.new.index
+  short_summary = index.map do |v| 
+    url = v['url'].length > 38 ? "#{v['url'][0..25]}...#{v['url'][-10..-1]}" : "#{v['url']}"
+    "#{v['shortened']} :   #{url}  #{v['type'].nil? ? '' : ('type: ' + v['type'])}"
+  end.join("\n")
+  puts <<-EOD
+shorts: #{index.length}
+
+#{short_summary}
+
+
+EOD
+end
+
+case ARGV[0]
+when 'shorten'
+  shorten(ARGV[1])
+when 'fetch'
+  fetch(ARGV[1])
+when 'server'
+  start_web
+when 'index'
+  show_index
+else
+  puts "this shit don't work"
+end

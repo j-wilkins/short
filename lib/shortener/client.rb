@@ -19,13 +19,18 @@ class Shortener
       if response.is_a?(Net::HTTPOK)
         return JSON.parse(response.body)
       else
-        raise "OH SHIT! #{respons}"
+        raise "OH SHIT! #{response}"
       end
     end
 
     # get data for a short, including full url.
     def fetch(short)
-      opts = 
+      response = request(:get, :fetch, short)
+      begin
+        return JSON.parse(response)
+      rescue Exception => boom
+        raise "OH SHIT! #{boom}\n\n #{response}"
+      end
     end
 
     # post a file to the configured s3 bucket and set a short.
@@ -34,6 +39,12 @@ class Shortener
 
     # fetch data on multiple shorts
     def index(start = 0, stop = nil)
+      response = request(:get, :index)
+      begin
+        return JSON.parse(response)
+      rescue Exception => boom
+        raise "OH SHIT! #{boom}\n\n #{response}"
+      end
     end
 
     private
