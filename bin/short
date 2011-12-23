@@ -52,7 +52,7 @@ end
 
 def show_index
   index = Shortener::Client.new.index
-  short_summary = index.map do |v| 
+  short_summary = index.map do |v|
     url = v['url'].length > 38 ? "#{v['url'][0..25]}...#{v['url'][-10..-1]}" : "#{v['url']}"
     "#{v['shortened']} :   #{url}  #{v['type'].nil? ? '' : ('type: ' + v['type'])}"
   end.join("\n")
@@ -85,12 +85,15 @@ def usage
   Usage: shortener COMMAND <arg>
 
   a command could be:
+    server:   start an instance of the shortener server locally.
     shorten:  get a shortened version of <arg>.
     fetch:    get data for <arg> which should be a short.
+    delete:   delete a short from the index.
     index:    show summary data for all shorts.
+    rake:     run a shortener rake task. [heroku:build, heroku:setup...]
 
   the default command is shorten, so that one could
-    
+
      shortener www.google.com
 
   and the result would be a short for www.google.com
