@@ -1,2 +1,4 @@
 *.DS_Store
 lib/shortener/server/env
+*.gem
+heroku

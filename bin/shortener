@@ -60,6 +60,13 @@ shorts: #{index.length}
 EOD
 end
 
+def rake(arg)
+  puts "running shortener rake task: #{arg}"
+  gem_dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
+  cmd = "cd #{gem_dir} && rake #{arg}"
+  puts `#{cmd}`
+end
+
 def do_action(act, arg)
   unless arg.nil?
     send(act, arg)
@@ -94,6 +101,8 @@ when 'server'
   start_web
 when 'index'
   show_index
+when 'rake'
+  do_action(:rake, ARGV[1])
 else
-  do_action(:shorten, ARGV[1])
+  do_action(:shorten, ARGV[0])
 end

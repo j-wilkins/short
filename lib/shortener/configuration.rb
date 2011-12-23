@@ -9,6 +9,8 @@ class Shortener
       :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY, :S3_DEFAULT_ACL, :S3_BUCKET,
       :DOTFILE_PATH]
 
+    HEROKU_IGNORE = [:DOTFILE_PATH, :SHORTENER_URL, :REDISTOGO_URL]
+
     END_POINTS = [:add, :fetch, :upload, :index]
 
     #store any paassed options and parse ~/.shortener if exists
@@ -28,6 +30,12 @@ class Shortener
       else
         raise "BAD ENDPOINT: #{end_point} is not a valid shortener end point."
       end
+    end
+
+    def to_params
+      ret = Array.new
+      @options.each {|k,v| ret << "#{k}=#{v}" unless HEROKU_IGNORE.include?(k)}
+      ret.join(" ")
     end
 
     OPTIONS.each do |opt|
