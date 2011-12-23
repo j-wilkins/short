@@ -27,7 +27,7 @@ def start_web
 end
 
 def shorten(url)
-  puts Shortener::Client.new.shorten(url)['short']
+  puts Shortener::Client.new.shorten(url)['url']
 end
 
 def fetch(url)
@@ -43,6 +43,11 @@ def fetch(url)
   expired     => #{fetched['expired']}
   maxed       => #{fetched['maxed']}
 EOF
+end
+
+def delete(short)
+  del =  Shortener::Client.new.delete(short)
+  puts "#{short} deleted" if del['success']
 end
 
 def show_index
@@ -103,6 +108,8 @@ when 'index'
   show_index
 when 'rake'
   do_action(:rake, ARGV[1])
+when 'delete'
+  do_action(:delete, ARGV[1])
 else
   do_action(:shorten, ARGV[0])
 end

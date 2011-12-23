@@ -8,7 +8,19 @@ class TestShortenerClient < MiniTest::Unit::TestCase
   end
 
   def test_add
-    @client.shorten('www.google.com')['short']
+    short = @client.shorten('www.google.com')
+    assert short['success']
+  end
+
+  def test_index
+    ind = @client.index
+    assert ind.is_a?(Array)
+  end
+
+  def test_delete
+    add = @client.shorten('www.google.com')
+    del = @client.delete(add['short'])
+    assert del['success']
   end
 
 end

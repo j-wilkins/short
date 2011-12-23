@@ -83,7 +83,7 @@ class Shortener
         end
         id ||= shorten(url, params)
 
-        "#{base_url}/#{id}"
+        return "#{base_url}/#{id}", id
       end
 
       def set_upload_short(params)
@@ -256,7 +256,7 @@ class Shortener
       delete_short(id)
       if format == 'json'
         content_type :json
-        {success: true}.to_json
+        {success: true, short: id}.to_json
       else
         redirect :index
       end
@@ -332,11 +332,11 @@ class Shortener
         # essentally, params = params
       end
 
-      @url = set_or_fetch_url(params["shortener"])
+      @url, id = set_or_fetch_url(params["shortener"])
       puts "set #{@url} to #{params['shortener']['url']}"
       if format == 'json'
         content_type :json
-        {data: :success, short: @url, html: haml(:display, :layout => false)}.to_json
+        {success: true, short: id, url:  @url, html: haml(:display, :layout => false)}.to_json
       else
         haml :display
       end

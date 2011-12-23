@@ -11,7 +11,7 @@ class Shortener
 
     HEROKU_IGNORE = [:DOTFILE_PATH, :SHORTENER_URL, :REDISTOGO_URL]
 
-    END_POINTS = [:add, :fetch, :upload, :index]
+    END_POINTS = [:add, :fetch, :upload, :index, :delete]
 
     #store any paassed options and parse ~/.shortener if exists
     # priority goes dotfile < env < passed option
@@ -25,7 +25,7 @@ class Shortener
 
     def uri_for(end_point, opts = nil)
       if END_POINTS.include?(end_point.to_sym)
-        path = end_point == :fetch ? opts : end_point
+        path = path_for(end_point, opts)
         URI.parse("#{@options[:SHORTENER_URL]}/#{path}.json")
       else
         raise "BAD ENDPOINT: #{end_point} is not a valid shortener end point."
@@ -57,6 +57,18 @@ class Shortener
       def check_env
         OPTIONS.each do |opt|
           @options[opt] = ENV[opt.to_s] unless ENV[opt.to_s].nil?
+        end
+      end
+
+      # do the logic necessary to setup a route for <end_point>
+      def path_for(end_point, opts = nil)
+        case end_point
+        when :fetch
+          opts
+        when :delete
+          "#{end_point}/#{opts}"
+        else
+          end_point.to_s
         end
       end
 
