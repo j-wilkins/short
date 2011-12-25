@@ -280,21 +280,29 @@ class Shortener
     end
 
     #get '/:id.?:format?' do
-    get %r{\/([a-z0-9]{5})(\.[a-z]{3,}){0,1}}i do
+    get %r{\/([a-z0-9]{3,})(\.[a-z]{3,}){0,1}}i do
       id = params[:captures].first
       sha = $redis.get(id)
-      unless sha.nil?
+      if sha.nil?
+        if (params[:captures].last == '.json')
+          content_type :json
+          {success: false, message: 'Short not found'}.to_json
+        else
+          puts "redirecting to default url"
+          redirect $default_url
+        end
+      else
         key = "data:#{sha}:#{id}"
         short = $redis.hgetall(key)
         not_expired = short.has_key?('expire') ? $redis.get(short['expire']) : true
         not_maxed = !(short['click-count'].to_i >= short['max-clicks'].to_i)
         short.has_key?('max-clicks') ? not_maxed : not_maxed = true
-        $redis.hincrby(key, 'click-count', 1) if not_expired && not_maxed
         if params[:captures].last == '.json'
           ret = short.merge({expired: not_expired.nil? , maxed: !not_maxed})
           content_type :json
           return ret.to_json
         else
+          $redis.hincrby(key, 'click-count', 1) if not_expired && not_maxed
           if not_expired
             unless short['s3'] == 'true' && !(short['type'] == 'download')
               if not_maxed
@@ -309,8 +317,6 @@ class Shortener
           end # => expired check
         end # => format
       end
-      puts "redirecting to default url"
-      redirect $default_url
     end
 
     post '/upload.?:format?' do |format|

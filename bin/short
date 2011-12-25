@@ -35,14 +35,18 @@ def fetch(url)
     url = url[-6..-1]
   end
   fetched = Shortener::Client.new.fetch(url)
-  puts <<-EOF
+  unless fetched['success'] == false
+    puts <<-EOF
   short       => #{fetched['shortened']}
   url         => #{fetched['url']}
   set-count   => #{fetched['set-count']}
   click-count => #{fetched['click-count']}
   expired     => #{fetched['expired']}
   maxed       => #{fetched['maxed']}
-EOF
+    EOF
+  else
+    puts fetched['message']
+  end
 end
 
 def delete(short)
