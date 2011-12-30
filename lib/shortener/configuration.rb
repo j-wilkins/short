@@ -21,6 +21,7 @@ class Shortener
       check_dotfile
       check_env
       @options = @options.merge!(opts)
+      @options[:DEFAULT_URL] ||= '/index'
     end
 
     def uri_for(end_point, opts = nil)
@@ -47,7 +48,14 @@ class Shortener
     end
 
     def redistogo_url
-      URI.parse(@options[:REDISTOGO_URL])
+      begin
+        URI.parse(@options[:REDISTOGO_URL])
+      rescue Exception => boom
+        puts "Error parsing redistogo_url: #{@options[:REDISTOGO_URL]}"
+        puts "should probably be something like: redis://localhost:6379 if run locally"
+        puts "if you're on Heroku, make sure you have the RedisToGo addon installed.\n\n"
+        raise boom
+      end
     end
 
     def s3_enabled

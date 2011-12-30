@@ -105,6 +105,39 @@ def usage
 EOU
 end
 
+def write_configuration
+  store = ARGV.shift(2)
+  puts "the Short command line tool works best with a config file, ~/.shortener."
+  puts "We didn't find on, if you'd like we can write one now. (y|n)"
+  if gets.chomp == 'y'
+    opts = Hash.new
+    puts "sweet. What is the URL for your shortener server?"
+    opts[:SHORTENER_URL] = gets.chomp
+    puts "for your shortener server, what would you like the default redirect to be? (defaults to /index)"
+    opts[:DEFAULT_URL] = gets.chomp
+    puts "are you going to be running the server on this computer? (y|n)"
+    if gets.chomp == 'y'
+      puts "what url would you like to use for redis? (ex. redis://localhost:6379)"
+      opts[:REDISTOGO_URL] = gets.chomp
+      puts "would you like to enabled S3 uploads? (y|n)"
+      if gets.chomp == 'y'
+        opts[:S3_ENABLED] = true
+        puts "You will want to set the following options, either in your ENV of edit this config:"
+        puts "S3_KEY_PREFIX, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_DEFAULT_ACL, S3_BUCKET\n\n"
+      end
+    end
+    puts "nice. for now, that's all we need. writing file...\n\n"
+    File.open(@conf_file, 'w') {|f| f.puts opts.to_yaml}
+  else
+    puts "fine, but any errors aren't my fault.\n\n"
+  end
+  ARGV.concat(store)
+end
+
+@conf_file = ENV['DOTFILE_PATH'] || File.join(ENV['HOME'], ".shortener")
+
+write_configuration unless File.exists?(@conf_file)
+
 case ARGV[0]
 when 'shorten'
   do_action(:shorten, ARGV[1])

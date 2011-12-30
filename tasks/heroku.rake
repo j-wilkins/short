@@ -10,6 +10,7 @@ namespace :heroku do
     cmd += " && mkdir heroku/server"
     cmd += " && cp -r #{gem_file("lib/shortener/server/*")} ./heroku/server/"
     cmd += " && cp #{gem_file('lib/shortener/server.rb')} ./heroku/main.rb"
+    cmd += " && cp #{gem_file('lib/shortener/configuration.rb')} ./heroku/configuration.rb"
     cmd += " && mv ./heroku/server/config.ru.template ./heroku/config.ru"
     cmd += " && mv ./heroku/server/Gemfile ./heroku/server/Gemfile.lock ./heroku"
     cmd += " && git init heroku && cd heroku && git add . && git commit -m initial"
