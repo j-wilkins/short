@@ -258,7 +258,7 @@ class Shortener
       if sha.nil?
         if (params[:captures].last == '.json')
           content_type :json
-          {success: false, message: 'Short not found'}.to_json
+          return {success: false, message: 'Short not found'}.to_json
         else
           puts "redirecting to default url"
           redirect $conf.default_url
@@ -289,6 +289,8 @@ class Shortener
           end # => expired check
         end # => format
       end
+      puts "redirecting to default url"
+      redirect $conf.default_url
     end
 
     post '/upload.?:format?' do |format|
