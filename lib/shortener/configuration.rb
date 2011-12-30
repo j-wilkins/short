@@ -7,7 +7,7 @@ class Shortener
 
     OPTIONS = [:SHORTENER_URL, :DEFAULT_URL, :REDISTOGO_URL, :S3_KEY_PREFIX,
       :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY, :S3_DEFAULT_ACL, :S3_BUCKET,
-      :DOTFILE_PATH]
+      :DOTFILE_PATH, :S3_ENABLED]
 
     HEROKU_IGNORE = [:DOTFILE_PATH, :SHORTENER_URL, :REDISTOGO_URL]
 
@@ -39,10 +39,41 @@ class Shortener
     end
 
     OPTIONS.each do |opt|
+      next if [:REDISTOGO_URL, :S3_ENABLED].include?(opt)
       method_name = opt.to_s.downcase.to_sym
       define_method "#{method_name}" do
         @options[opt]
       end
+    end
+
+    def redistogo_url
+      URI.parse(@options[:REDISTOGO_URL])
+    end
+
+    def s3_enabled
+      @options[:S3_ENABLED].to_s == 'true'
+    end
+
+    def s3_policy
+      expiration_date = (Time.now + 36000).utc.strftime('%Y-%m-%dT%H:%M:%S.000Z') # 10.hours.from_now
+      max_filesize = 2147483648 # 2.gigabyte
+      policy = Base64.encode64(
+        "{'expiration': '#{expiration_date}',
+          'conditions': [
+          {'bucket': '#{s3_bucket}'},
+          ['starts-with', '$key', '#{s3_key_prefix}'],
+          {'acl': '#{s3_default_acl}'},
+          {'success_action_status': '201'},
+          ['starts-with', '$Filename', ''],
+          ['content-length-range', 0, #{max_filesize}]
+          ]
+          }"
+      ).gsub(/\n|\r/, '')
+    end
+
+    def s3_signature(policy)
+      signature = Base64.encode64(OpenSSL::HMAC.digest(
+        OpenSSL::Digest::Digest.new('sha1'), s3_secret_access_key, policy)).gsub("\n","")
     end
 
     private

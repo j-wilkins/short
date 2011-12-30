@@ -5,6 +5,7 @@ require 'json'
 require 'haml'
 require 'digest/sha1'
 require 'base64'
+require File.join(File.dirname(__FILE__), 'configuration')
 
 
 
@@ -15,18 +16,13 @@ class Shortener
     set :public_folder, File.join(dir, 'server', 'public')
 
     configure do
-      uri = URI.parse(ENV["REDISTOGO_URL"])
+      $conf = Shortener::Configuration.new
+      uri = $conf.redistogo_url
       _redis = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
       $redis = Redis::Namespace.new(:shortener, redis: _redis)
-      $default_url = ENV['DEFAULT_URL'] || '/index'
-      $s3_config = {
-        bucket:            ENV['S3_BUCKET'],
-        key_prefix:        ENV['S3_KEY_PREFIX'],
-        default_acl:       ENV['S3_DEFAULT_ACL'],
-        access_key_id:     ENV['S3_ACCESS_KEY_ID'],
-        secret_access_key: ENV['S3_SECRET_ACCESS_KEY']
-      }
     end
+
+    set(:s3_enabled) {|v| condition {$conf.s3_enabled == v}}
 
     helpers do
 
@@ -92,7 +88,7 @@ class Shortener
         fname = params['file_name'].gsub(' ', '+')
         sha = Digest::SHA1.hexdigest(fname)
         hash_key = "data:#{sha}:#{key}"
-        url = "https://s3.amazonaws.com/#{$s3_config[:bucket]}/#{$s3_config[:key_prefix]}/#{fname}"
+        url = "https://s3.amazonaws.com/#{$conf.s3_bucket}/#{$conf.s3_key_prefix}/#{fname}"
         ext = File.extname(fname)[1..-1]
         extras = ['url', url, 's3', true, 'shortened', key, 'extension', ext, 'set-count', 1]
         data = params.keys.map {|k| [k, params[k]] }.flatten.concat(extras)
@@ -198,30 +194,6 @@ class Shortener
         ret
       end
 
-      def s3_policy
-        expiration_date = (Time.now + 36000).utc.strftime('%Y-%m-%dT%H:%M:%S.000Z') # 10.hours.from_now
-        max_filesize = 2147483648 # 2.gigabyte
-        policy = Base64.encode64(
-          "{'expiration': '#{expiration_date}',
-            'conditions': [
-            {'bucket': '#{$s3_config[:bucket]}'},
-            ['starts-with', '$key', '#{$s3_config[:key_prefix]}'],
-            {'acl': '#{$s3_config[:default_acl]}'},
-            {'success_action_status': '201'},
-            ['starts-with', '$Filename', ''],
-            ['content-length-range', 0, #{max_filesize}]
-            ]
-            }"
-        ).gsub(/\n|\r/, '')
-      end
-
-      def s3_signature(policy)
-        signature = Base64.encode64(OpenSSL::HMAC.digest(
-          OpenSSL::Digest::Digest.new('sha1'),
-          $s3_config[:secret_access_key], policy)
-        ).gsub("\n","")
-      end
-
     end
 
     before do
@@ -229,7 +201,7 @@ class Shortener
     end
 
     get '/' do
-      redirect $default_url
+      redirect $conf.default_url
     end
 
     get '/add' do
@@ -262,20 +234,20 @@ class Shortener
       end
     end
 
-    get '/upload' do
-      policy = s3_policy
-      signature = s3_signature(policy)
+    get '/upload', s3_enabled: true do
+      policy = $conf.s3_policy
+      signature = $conf.s3_signature(policy)
 
       @post = {
-        "key" => "#{$s3_config[:key_prefix]}/${filename}",
-        "AWSAccessKeyId" => "#{$s3_config[:access_key_id]}",
-        "acl" => "#{$s3_config[:default_acl]}",
+        "key" => "#{$conf.s3_key_prefix}/${filename}",
+        "AWSAccessKeyId" => "#{$conf.s3_access_key_id}",
+        "acl" => "#{$conf.s3_default_acl}",
         "policy" => "#{policy}",
         "signature" => "#{signature}",
         "success_action_status" => "201"
       }
 
-      @upload_url = "http://#{$s3_config[:bucket]}.s3.amazonaws.com/"
+      @upload_url = "http://#{$conf.s3_bucket}.s3.amazonaws.com/"
       haml :upload
     end
 
@@ -289,7 +261,7 @@ class Shortener
           {success: false, message: 'Short not found'}.to_json
         else
           puts "redirecting to default url"
-          redirect $default_url
+          redirect $conf.default_url
         end
       else
         key = "data:#{sha}:#{id}"
