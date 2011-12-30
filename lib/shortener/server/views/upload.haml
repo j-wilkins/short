@@ -62,7 +62,7 @@
             //   data: "name=" + file.name,
             //   async: false,
             // });
-            $.post('/upload', values, function(data){
+            $.post('/upload.json', values, function(data){
               $('#shortener-display').text(data.url)
                 .removeClass('hide');
             });

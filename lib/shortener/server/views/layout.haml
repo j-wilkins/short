@@ -16,6 +16,9 @@
               %a{href: '/index'} Index
             %li
               %a{href: '/add'} Add
+            - if $conf.s3_enabled
+              %li
+                %a{href: '/upload'} Upload
 
     #main.container(style="margin-top: 40px;")
       = yield

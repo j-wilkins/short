@@ -292,10 +292,10 @@ class Shortener
     end
 
     post '/upload.?:format?' do |format|
-      content_type :json
       short = set_upload_short(params['shortener'])
       puts "set #{short} to #{params['shortener']['file_name']}"
       if format == 'json'
+        content_type :json
         {url: short}.to_json
       else
         redirect :index
