@@ -5,6 +5,14 @@ class Shortener
   # The class for storing Configuration Information
   class Configuration
 
+    class << self
+      def current
+        @current_configuration ||= Configuration.new(conf_current_placeholder: nil)
+      end
+    end
+
+    attr_accessor :options
+
     OPTIONS = [:SHORTENER_URL, :DEFAULT_URL, :REDISTOGO_URL, :S3_KEY_PREFIX,
       :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY, :S3_DEFAULT_ACL, :S3_BUCKET,
       :DOTFILE_PATH, :S3_ENABLED]
@@ -17,13 +25,19 @@ class Shortener
     # priority goes dotfile < env < passed option
     def initialize(opts = Hash.new)
       # TODO check keys by calls opts.delete {|k| !OPTIONS.include?(k)
-      @options = Hash.new
-      check_dotfile
-      check_env
-      @options = @options.merge!(opts)
-      @options[:DEFAULT_URL] ||= '/index'
+      unless opts.empty?
+        opts.delete(:conf_current_placeholder)
+        @options = Hash.new
+        check_dotfile
+        check_env
+        @options = @options.merge!(opts)
+        @options[:DEFAULT_URL] ||= '/index'
+      else
+        @options = Configuration.current.options
+      end
     end
 
+    # return a URI for an endpoint based on this configuration
     def uri_for(end_point, opts = nil)
       if END_POINTS.include?(end_point.to_sym)
         path = path_for(end_point, opts)
@@ -33,6 +47,7 @@ class Shortener
       end
     end
 
+    # return a string ENV's for command line use.
     def to_params
       ret = Array.new
       @options.each {|k,v| ret << "#{k}=#{v}" unless HEROKU_IGNORE.include?(k)}
@@ -47,6 +62,7 @@ class Shortener
       end
     end
 
+    # return the URI for the redistogo url
     def redistogo_url
       begin
         URI.parse(@options[:REDISTOGO_URL])
@@ -58,10 +74,12 @@ class Shortener
       end
     end
 
+    # return a boolean of the S3_ENABLED option
     def s3_enabled
       @options[:S3_ENABLED].to_s == 'true'
     end
 
+    # build an S3 policy.
     def s3_policy
       expiration_date = (Time.now + 36000).utc.strftime('%Y-%m-%dT%H:%M:%S.000Z') # 10.hours.from_now
       max_filesize = 2147483648 # 2.gigabyte
@@ -79,6 +97,7 @@ class Shortener
       ).gsub(/\n|\r/, '')
     end
 
+    # Sign an S3 policy
     def s3_signature(policy)
       signature = Base64.encode64(OpenSSL::HMAC.digest(
         OpenSSL::Digest::Digest.new('sha1'), s3_secret_access_key, policy)).gsub("\n","")
@@ -86,6 +105,7 @@ class Shortener
 
     private
 
+      # Parse the YAML dotfile if one exists
       def check_dotfile
         dotfile = @options[:DOTFILE_PATH] || File.join(ENV['HOME'], ".shortener")
         if File.exists?(dotfile)
@@ -93,6 +113,7 @@ class Shortener
         end
       end
 
+      # Check our environment for any overrides.
       def check_env
         OPTIONS.each do |opt|
           @options[opt] = ENV[opt.to_s] unless ENV[opt.to_s].nil?
