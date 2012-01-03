@@ -22,7 +22,7 @@ class Shortener
       $redis = Redis::Namespace.new(:shortener, redis: _redis)
     end
 
-    set(:s3_enabled) {|v| condition {$conf.s3_enabled == v}}
+    set(:s3_available) {|v| condition {$conf.s3_available == v}}
 
     helpers do
 
@@ -75,11 +75,11 @@ class Shortener
         end
 
         unless params['max-clicks'] || params['expire'] || params['desired-short']
-          id = check_cache(url)
+          data = check_cache(url)
         end
-        id ||= shorten(url, params)
+        data ||= shorten(url, params)
 
-        return "#{base_url}/#{id}", id
+        data
       end
 
       def set_upload_short(params)
@@ -90,13 +90,14 @@ class Shortener
         hash_key = "data:#{sha}:#{key}"
         url = "https://s3.amazonaws.com/#{$conf.s3_bucket}/#{$conf.s3_key_prefix}/#{fname}"
         ext = File.extname(fname)[1..-1]
-        extras = ['url', url, 's3', true, 'shortened', key, 'extension', ext, 'set-count', 1]
-        data = params.keys.map {|k| [k, params[k]] }.flatten.concat(extras)
+        data = {'url' => url, 's3' => true, 'shortened' => key, 
+          'extension' => ext, 'set-count' => 1}
+        data = params.merge(data)
 
         $redis.set(key, sha)
-        $redis.hmset(hash_key, *data)
+        $redis.hmset(hash_key, *arrayify_hash(data))
 
-        "#{base_url}/#{key}"
+        data
       end
 
       def shorten(url, options = {})
@@ -116,7 +117,7 @@ class Shortener
               if (!prev_set['max-clicks'] && !prev_set['expire'] &&
                 (prev_set['url'] == url.to_s))
                 $redis.hincrby(check_key, 'set-count', 1)
-                return options['desired-short']
+                return prev_set
               end
             end
 
@@ -136,19 +137,19 @@ class Shortener
         sha = Digest::SHA1.hexdigest(url.to_s)
         $redis.set(key, sha)
 
-        hsh_data = ['shortened', key, 'url', url, 'set-count', 1]
-        hsh_data.concat(['max-clicks', options['max-clicks'].to_i]) if options['max-clicks']
+        hsh_data = {'shortened' => key, 'url' => url, 'set-count' => 1}
+        hsh_data['max-clicks'] = options['max-clicks'].to_i if options['max-clicks']
 
         if options['expire'] # set expire time if specified
           ttl = options['expire'].to_i
           ttl_key = "expire:#{sha}:#{key}"
           $redis.set(ttl_key, "#{sha}:#{key}")
           $redis.expire(ttl_key, ttl)
-          hsh_data.concat(['expire', ttl_key])
+          hsh_data[:expire] = ttl_key
         end
-        $redis.hmset("data:#{sha}:#{key}", *hsh_data)
+        $redis.hmset("data:#{sha}:#{key}", *arrayify_hash(hsh_data))
 
-        key
+        hsh_data
       end
 
       def check_cache(url)
@@ -158,7 +159,7 @@ class Shortener
           short = $redis.hgetall(key)
           unless short == {} || short['expire'] || short['max-clicks']
             $redis.hincrby(key, 'set-count', 1)
-            return short['shortened']
+            return short
           end
         end
         nil
@@ -192,6 +193,10 @@ class Shortener
           ret = ttl
         end
         ret
+      end
+
+      def arrayify_hash(hsh)
+        hsh.keys.map {|k| [k, hsh[k]] }.flatten
       end
 
     end
@@ -228,13 +233,13 @@ class Shortener
       delete_short(id)
       if format == 'json'
         content_type :json
-        {success: true, short: id}.to_json
+        {success: true, shortened: id}.to_json
       else
         redirect :index
       end
     end
 
-    get '/upload', s3_enabled: true do
+    get '/upload', s3_available: true do
       policy = $conf.s3_policy
       signature = $conf.s3_signature(policy)
 
@@ -294,11 +299,12 @@ class Shortener
     end
 
     post '/upload.?:format?' do |format|
-      short = set_upload_short(params['shortener'])
-      puts "set #{short} to #{params['shortener']['file_name']}"
+      @data = set_upload_short(params['shortener'])
+      puts "set #{@data['shortened']} to #{params['shortener']['file_name']}"
+      @url = "#{base_url}/#{@data['shortened']}"
       if format == 'json'
         content_type :json
-        {url: short}.to_json
+        @data.merge({url: @url, html: haml(:display, layout: false)}).to_json
       else
         redirect :index
       end
@@ -312,11 +318,12 @@ class Shortener
         # essentally, params = params
       end
 
-      @url, id = set_or_fetch_url(params["shortener"])
+      @data = set_or_fetch_url(params["shortener"])
+      @url = "#{base_url}/#{@data['shortened']}"
       puts "set #{@url} to #{params['shortener']['url']}"
       if format == 'json'
         content_type :json
-        {success: true, short: id, url:  @url, html: haml(:display, :layout => false)}.to_json
+        @data.merge({success: true, html: haml(:display, :layout => false)}).to_json
       else
         haml :display
       end

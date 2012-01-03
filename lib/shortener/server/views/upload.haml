@@ -63,7 +63,7 @@
             //   async: false,
             // });
             $.post('/upload.json', values, function(data){
-              $('#shortener-display').text(data.url)
+              $('#shortener-display').html(data.html)
                 .removeClass('hide');
             });
 
@@ -102,7 +102,7 @@
         %li.radio
           %input{name: 'shortener[type]', type: 'radio', value: 'download'} Download
       .row
-        %label.offset8.hide{id: 'shortener-display'}
+        #shortener-display.offset8.hide
       .field
         %label{for: 'shorterner[name]'} Name
         %input{type: 'text', name: 'shortener[name]'}

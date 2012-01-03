@@ -1,5 +1,6 @@
 #link_display.row
-  %div.offset5.span4
+  - classs = @data['s3'].nil? ? 'offset5' : ''
+  %div.span4{class: classs}
     %h4= @url
   %div.span2
     = clippy(@url)

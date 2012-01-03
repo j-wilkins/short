@@ -14,7 +14,7 @@ Currently, short uses either environment variables or settings from a config fil
 for the `short` client to work, you only need something like
 <pre>
 ---
-:SHORTENER_URL: http://< your shortener url>
+:SHORTENER\_URL: http://< your shortener url>
 </pre>
 
 checkout `lib/shortener/configuration.rb` for more options that you can set.
@@ -40,6 +40,44 @@ Once you have `short server` running locally (i.e. you've figured out the conf s
 you can run `short rake heroku:setup` and it will create a git repo of the necessary
 server files, create a heroku app, add the needed addons and push to the created heroku app.
 Run `short rake -T` to see more info.
+
+### API
+
+Shortener provide an OK API for interacting with shorts. You get the following.
+
+<pre>
+get '/index.json'      => info on all shorts.
+
+get '/delete/:id.json' => delete short @ id, returns {success: true, shortened: id}
+
+get '/:id.json'        => data hash for short @ id
+
+post '/add.json'       => data hash for new short
+
+post '/upload.json'    => data hash for new short,
+
+a data hash can contain the following keys:
+
+  shortened   => id of this short. i.e. 'xZ147'
+  url         => url of this short. i.e. 'www.google.com'
+  set-count   => number of times this url has been shortened.
+  click-count => number of times this short has been resolved.
+  expire      => expire key that will be checked to see if this key will expire
+  max-clicks  => maximum number of clicks this short will resolve for
+
+  if it's an endpoint that performs an action it will have a success key set to true or false.
+  (right now this is stupid and is set to true always, unless it errors, in which case you
+  get a 500 server error. hopefully that changes with some better error messages.)
+
+
+  S3 Keys
+
+    S3          => true if this is S3 content
+    extension   => the file extension of S3 content. i.e. 'm4v'
+    file\_name  => the name of the file. i.e. '1234.m4v'
+    name        => the descriptive name. i.e. 'Pandas'
+    description => the description. i.e. 'A panda sneezes'
+</pre>
 
 
 ### License
