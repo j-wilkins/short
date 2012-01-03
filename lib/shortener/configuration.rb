@@ -79,6 +79,21 @@ class Shortener
       @options[:S3_ENABLED].to_s == 'true'
     end
 
+    # are the necessary options present for S3 to work?
+    def s3_configured
+      ret = true
+      [:S3_KEY_PREFIX, :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY, 
+        :S3_DEFAULT_ACL, :S3_BUCKET ].each do |k|
+        ret = !@options[k].nil? unless ret == false
+      end
+      ret
+    end
+
+    # is S3 enabled and configured?
+    def s3_available
+      s3_enabled && s3_configured
+    end
+
     # build an S3 policy.
     def s3_policy
       expiration_date = (Time.now + 36000).utc.strftime('%Y-%m-%dT%H:%M:%S.000Z') # 10.hours.from_now
