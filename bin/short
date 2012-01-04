@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
 
-require 'shortener/client'
+require 'shortener'
 
 def start_web
   begin
@@ -27,18 +27,19 @@ def start_web
 end
 
 def shorten(url)
-  puts Shortener::Client.new.shorten(url)['url']
+  puts Shortener.shorten(url).short_url
 end
 
 def fetch(url)
   if url =~ /http:/
     url = url[-6..-1]
   end
-  fetched = Shortener::Client.new.fetch(url)
+  fetched = Shortener.fetch(url)
   unless fetched['success'] == false
     puts <<-EOF
   short       => #{fetched['shortened']}
   url         => #{fetched['url']}
+  short-url   => #{fetched.short_url}
   set-count   => #{fetched['set-count']}
   click-count => #{fetched['click-count']}
   expired     => #{fetched['expired']}
@@ -50,12 +51,12 @@ def fetch(url)
 end
 
 def delete(short)
-  del =  Shortener::Client.new.delete(short)
+  del =  Shortener.delete(short)
   puts "#{short} deleted" if del['success']
 end
 
 def show_index
-  index = Shortener::Client.new.index
+  index = Shortener.index
   short_summary = index.map do |v|
     url = v['url'].length > 38 ? "#{v['url'][0..25]}...#{v['url'][-10..-1]}" : "#{v['url']}"
     "#{v['shortened']} :   #{url}  #{v['type'].nil? ? '' : ('type: ' + v['type'])}"

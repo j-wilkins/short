@@ -229,7 +229,6 @@ class Shortener
     end
 
     get '/delete/:id.:format' do |id, format|
-      puts "#{id}, #{format}"
       delete_short(id)
       if format == 'json'
         content_type :json
@@ -304,7 +303,7 @@ class Shortener
       @url = "#{base_url}/#{@data['shortened']}"
       if format == 'json'
         content_type :json
-        @data.merge({url: @url, html: haml(:display, layout: false)}).to_json
+        @data.merge({html: haml(:display, layout: false)}).to_json
       else
         redirect :index
       end

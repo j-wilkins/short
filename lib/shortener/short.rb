@@ -1,9 +1,8 @@
-require_relative '../shortener'
 
 class Shortener
   class Short
 
-    SHORT_KEYS = [:url, :short, :type, :ext, :s3, :'click-count', :'max-count', 
+    SHORT_KEYS = [:url, :shortened, :type, :ext, :s3, :'click-count', :'max-count', 
       :'set-count', :'expire-time', :sha]
 
     attr_reader :data
@@ -24,7 +23,7 @@ class Shortener
       # get data for a short, including full url.
       def fetch(short, conf = nil)
         response = request(:get, :fetch, conf, short)
-        Short.new(response, conf)
+        Short.new(response.body, conf)
       end
 
       # post a file to the configured s3 bucket and set a short.
@@ -34,13 +33,15 @@ class Shortener
       # fetch data on multiple shorts
       def index(start = 0, stop = nil, conf = nil)
         response = request(:get, :index, conf)
-        Short.new(response, conf)
+        data = JSON.parse(response.body)
+        shorts = data.map {|sh| Short.new(sh, conf)}
+        shorts
       end
 
       # delete a short
       def delete(short, conf = nil)
         response = request(:get, :delete, conf, short)
-        Short.new(response, conf)
+        Short.new(response.body, conf)
       end
 
       # build a request based on configurations
@@ -50,7 +51,7 @@ class Shortener
         when :post
           Net::HTTP.post_form(config.uri_for(end_point), args)
         when :get
-          Net::HTTP.get(config.uri_for(end_point, args))
+          Net::HTTP.get_response(config.uri_for(end_point, args))
         end
       end
 
@@ -85,6 +86,16 @@ class Shortener
       URI.parse(url)
     end
 
+    # shortened combined with config#shortener_url
+    def short_url
+      "#{configuration.shortener_url}/#{shortened}"
+    end
+
+    # a URI of short url.
+    def short_uri
+      URI.parse(short_url)
+    end
+
     # allow the updating of a field. considering an arity like:
     # update(hsh_of_fields_with_values)
     # and it will create a POST request to send server side.
@@ -116,9 +127,10 @@ class Shortener
 
       # turn string numbers in to actual numbers.
       def normalize_data
-        [:'click-count', :'max-count', :'expire-time', :'set-count'].each do |k|
+        [:'click-count', :'max-count', :'set-count'].each do |k|
           @data[k] = @data[k].to_i
         end
+        @data[:'click-count'] ||= 0
       end
 
       # parse JSON safely.
@@ -132,3 +144,4 @@ class Shortener
 
   end
 end
+require_relative '../shortener'
