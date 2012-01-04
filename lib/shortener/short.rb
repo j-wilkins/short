@@ -2,7 +2,7 @@
 class Shortener
   class Short
 
-    SHORT_KEYS = [:url, :shortened, :type, :ext, :s3, :'click-count', :'max-count', 
+    SHORT_KEYS = [:url, :shortened, :type, :ext, :s3, :'click-count', :'max-count',
       :'set-count', :'expire-time', :sha]
 
     attr_reader :data
@@ -113,7 +113,7 @@ class Shortener
     def pretty_print
 
     end
-    
+
     private
 
       # used to turn the hash keys of the data hash in to symbols.

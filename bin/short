@@ -152,6 +152,8 @@ when 'rake'
   do_action(:rake, ARGV[1])
 when 'delete'
   do_action(:delete, ARGV[1])
+when '-v', '--version'
+  puts "short version #{Shortener::VERSION}"
 else
   do_action(:shorten, ARGV[0])
 end
