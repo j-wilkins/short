@@ -9,4 +9,6 @@ require File.join(dir, 'shortener', 'short')
 
 class Shortener
   class << self; include Shortener::Short::ClassMethods; end
+
+  class NetworkException < RuntimeError;end
 end

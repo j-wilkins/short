@@ -27,14 +27,23 @@ def start_web
 end
 
 def shorten(url)
-  puts Shortener.shorten(url).short_url
+  begin
+    puts Shortener.shorten(url).short_url
+  rescue Shortener::NetworkException => boom
+    puts boom.message
+    usage
+  end
 end
 
 def fetch(url)
   if url =~ /http:/
     url = url[-6..-1]
   end
-  fetched = Shortener.fetch(url)
+  begin
+    fetched = Shortener.fetch(url)
+  rescue Shortener::NetworkException => boom
+    puts boom.message
+  end
   unless fetched['success'] == false
     puts <<-EOF
   short       => #{fetched['shortened']}
@@ -51,12 +60,20 @@ def fetch(url)
 end
 
 def delete(short)
-  del =  Shortener.delete(short)
+  begin
+    del =  Shortener.delete(short)
+  rescue Shortener::NetworkException => boom
+    puts boom.message
+  end
   puts "#{short} deleted" if del['success']
 end
 
 def show_index
-  index = Shortener.index
+  begin
+    index = Shortener.index
+  rescue Shortener::NetworkException => boom
+    puts boom.message
+  end
   short_summary = index.map do |v|
     url = v['url'].length > 38 ? "#{v['url'][0..25]}...#{v['url'][-10..-1]}" : "#{v['url']}"
     "#{v['shortened']} :   #{url}  #{v['type'].nil? ? '' : ('type: ' + v['type'])}"

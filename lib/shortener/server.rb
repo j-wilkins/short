@@ -67,8 +67,9 @@ class Shortener
 
       def set_or_fetch_url(params)
         bad! 'Missing url.' unless url = params['url']
+        bad! 'Bad URL' unless params['url'] =~ /(^http|^www)/
         url = "http://#{url}" unless /^http/i =~ url
-        bad! 'Malformed url.' unless (url = URI.parse(url)) && /^http/ =~ url.scheme
+        bad! 'Bad URL' unless (url = URI.parse(url)) && /^http/ =~ url.scheme
 
         %w(max-clicks expire desired-short allow-override).each do |k|
           params[k] = false if params[k].nil? || params[k].empty?
@@ -90,7 +91,7 @@ class Shortener
         hash_key = "data:#{sha}:#{key}"
         url = "https://s3.amazonaws.com/#{$conf.s3_bucket}/#{$conf.s3_key_prefix}/#{fname}"
         ext = File.extname(fname)[1..-1]
-        data = {'url' => url, 's3' => true, 'shortened' => key, 
+        data = {'url' => url, 's3' => true, 'shortened' => key,
           'extension' => ext, 'set-count' => 1}
         data = params.merge(data)
 

@@ -47,12 +47,14 @@ class Shortener
       # build a request based on configurations
       def request(type, end_point, conf = nil, args = nil)
         config = conf || Shortener::Configuration.current
-        case type
+        response = case type
         when :post
           Net::HTTP.post_form(config.uri_for(end_point), args)
         when :get
           Net::HTTP.get_response(config.uri_for(end_point, args))
         end
+        raise NetworkException.new(response.body) if response.is_a?(Net::HTTPPreconditionFailed)
+        response
       end
 
     end # => ClassMethods
