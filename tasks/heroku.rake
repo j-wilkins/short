@@ -22,7 +22,7 @@ namespace :heroku do
     require_relative '../lib/shortener'
     $name = ENV['APPNAME'] || "shner-#{`whoami`.chomp}"
     cmd = Dir.pwd =~ /heroku$/ ? "" : "cd heroku && "
-    cmd += "heroku create #{name}"
+    cmd += "heroku create #{$name}"
     cmd += " && heroku addons:add redistogo:nano"
     cmd += " && heroku config:add #{Shortener::Configuration.new.to_params}"
     cmd += " && heroku addons:add custom_domains:basic"
