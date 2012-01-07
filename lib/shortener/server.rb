@@ -30,8 +30,8 @@ class Shortener
         halt 412, {}, message
       end
 
-      def nope!
-        halt 404, {}, "No luck."
+      def nope!(message = 'No luck.')
+        halt 404, {}, message
       end
 
       def base_url
@@ -169,10 +169,15 @@ class Shortener
       def delete_short(id)
         puts "deleting #{id}"
         puts sha = $redis.get(id)
-        $redis.multi do
-          $redis.del "data:#{sha}:#{id}"
-          $redis.del "expire:#{sha}:#{id}"
-          $redis.del id
+        unless sha.nil?
+          $redis.multi do
+            $redis.del "data:#{sha}:#{id}"
+            $redis.del "expire:#{sha}:#{id}"
+            $redis.del id
+          end
+          true
+        else
+          false
         end
       end
 
@@ -230,10 +235,11 @@ class Shortener
     end
 
     get '/delete/:id.:format' do |id, format|
-      delete_short(id)
+      status = delete_short(id)
       if format == 'json'
+        nope! "Short not found: #{id}" if status == false
         content_type :json
-        {success: true, shortened: id}.to_json
+        {success: status, shortened: id}.to_json
       else
         redirect :index
       end
@@ -262,8 +268,7 @@ class Shortener
       sha = $redis.get(id)
       if sha.nil?
         if (params[:captures].last == '.json')
-          content_type :json
-          return {success: false, message: 'Short not found'}.to_json
+          nope! "Short not found: #{id}"
         else
           puts "redirecting to default url"
           redirect $conf.default_url

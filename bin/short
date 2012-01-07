@@ -43,6 +43,7 @@ def fetch(url)
     fetched = Shortener.fetch(url)
   rescue Shortener::NetworkException => boom
     puts boom.message
+    exit
   end
   unless fetched['success'] == false
     puts <<-EOF
@@ -64,6 +65,7 @@ def delete(short)
     del =  Shortener.delete(short)
   rescue Shortener::NetworkException => boom
     puts boom.message
+    exit
   end
   puts "#{short} deleted" if del['success']
 end

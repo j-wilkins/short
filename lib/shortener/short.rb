@@ -53,7 +53,7 @@ class Shortener
         when :get
           Net::HTTP.get_response(config.uri_for(end_point, args))
         end
-        raise NetworkException.new(response.body) if response.is_a?(Net::HTTPPreconditionFailed)
+        raise NetworkException.new(response.body) if response.kind_of?(Net::HTTPClientError)
         response
       end
 
