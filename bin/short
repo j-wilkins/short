@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-$LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
+$: << File.expand_path(File.dirname(__FILE__) + '/../lib')
 
 require 'shortener'
 
@@ -89,11 +89,11 @@ shorts: #{index.length}
 EOD
 end
 
-def rake(arg)
-  puts "running shortener rake task: #{arg}"
+def build
   gem_dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
-  cmd = "cd #{gem_dir} && rake #{arg}"
-  puts `#{cmd}`
+  require 'rake'; load 'shortener/tasks/heroku.rake'
+  Rake::Task[:'heroku:build'].execute
+  Rake::Task[:'heroku:git'].execute
 end
 
 def do_action(act, arg)
@@ -167,8 +167,9 @@ when 'server'
   start_web
 when 'index'
   show_index
-when 'rake'
-  do_action(:rake, ARGV[1])
+when 'build'
+  #do_action(:build, ARGV[1])
+  build
 when 'delete'
   do_action(:delete, ARGV[1])
 when '-v', '--version'
