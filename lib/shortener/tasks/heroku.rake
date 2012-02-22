@@ -164,9 +164,11 @@ namespace :short do
         arr.concat([:set_count, set_count]) unless set_count.nil?
         arr.concat([:click_count, click_count]) unless click_count.nil?
         puts "** setting: #{arr.inspect}" if ENV['VERBOSE']
-        redis.hmset(k, *arr)
-        redis.hdel(k, 'set-count')
-        redis.hdel(k, 'click-count')
+        unless arr.empty?
+          redis.hmset(k, *arr)
+          redis.hdel(k, 'set-count')
+          redis.hdel(k, 'click-count')
+        end
         puts "#{k} afterwards: #{redis.hgetall(k)}" if ENV['VERBOSE']
       end
     end
