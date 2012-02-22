@@ -92,7 +92,7 @@ class Shortener
         url = "https://s3.amazonaws.com/#{$conf.s3_bucket}/#{$conf.s3_key_prefix}/#{fname}"
         ext = File.extname(fname)[1..-1]
         data = {'url' => url, 's3' => true, 'shortened' => key,
-          'extension' => ext, 'set-count' => 1}
+          'extension' => ext, 'set_count' => 1}
         data = params.merge(data)
 
         $redis.set(key, sha)
@@ -117,7 +117,7 @@ class Shortener
             unless options['expire'] || options['max-clicks']
               if (!prev_set['max-clicks'] && !prev_set['expire'] &&
                 (prev_set['url'] == url.to_s))
-                $redis.hincrby(check_key, 'set-count', 1)
+                $redis.hincrby(check_key, 'set_count', 1)
                 return prev_set
               end
             end
@@ -138,7 +138,7 @@ class Shortener
         sha = Digest::SHA1.hexdigest(url.to_s)
         $redis.set(key, sha)
 
-        hsh_data = {'shortened' => key, 'url' => url, 'set-count' => 1}
+        hsh_data = {'shortened' => key, 'url' => url, 'set_count' => 1}
         hsh_data['max-clicks'] = options['max-clicks'].to_i if options['max-clicks']
 
         if options['expire'] # set expire time if specified
@@ -159,7 +159,7 @@ class Shortener
         $redis.keys("data:#{sha}:*").each do |key|
           short = $redis.hgetall(key)
           unless short == {} || short['expire'] || short['max-clicks']
-            $redis.hincrby(key, 'set-count', 1)
+            $redis.hincrby(key, 'set_count', 1)
             return short
           end
         end
@@ -277,14 +277,14 @@ class Shortener
         key = "data:#{sha}:#{id}"
         short = $redis.hgetall(key)
         not_expired = short.has_key?('expire') ? $redis.get(short['expire']) : true
-        not_maxed = !(short['click-count'].to_i >= short['max-clicks'].to_i)
+        not_maxed = !(short['click_count'].to_i >= short['max-clicks'].to_i)
         short.has_key?('max-clicks') ? not_maxed : not_maxed = true
         if params[:captures].last == '.json'
           ret = short.merge({expired: not_expired.nil? , maxed: !not_maxed})
           content_type :json
           return ret.to_json
         else
-          $redis.hincrby(key, 'click-count', 1) if not_expired && not_maxed
+          $redis.hincrby(key, 'click_count', 1) if not_expired && not_maxed
           if not_expired
             unless short['s3'] == 'true' && !(short['type'] == 'download')
               if not_maxed

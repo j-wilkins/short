@@ -1,5 +1,6 @@
 require 'uri'
 require 'yaml'
+require 'redis-namespace'
 
 class Shortener
   # The class for storing Configuration Information
@@ -15,7 +16,7 @@ class Shortener
 
     OPTIONS = [:SHORTENER_URL, :DEFAULT_URL, :REDISTOGO_URL, :S3_KEY_PREFIX,
       :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY, :S3_DEFAULT_ACL, :S3_BUCKET,
-      :DOTFILE_PATH, :S3_ENABLED]
+      :DOTFILE_PATH, :S3_ENABLED, :SHORTENER_NS]
 
     HEROKU_IGNORE = [:DOTFILE_PATH, :SHORTENER_URL, :REDISTOGO_URL]
 
@@ -32,6 +33,7 @@ class Shortener
         check_env
         @options = @options.merge!(opts)
         @options[:DEFAULT_URL] ||= '/index'
+        @options[:SHORTENER_NS] ||= :shortener
       else
         @options = Configuration.current.options
       end
@@ -61,6 +63,14 @@ class Shortener
         @options[opt]
       end
     end
+    alias ns shortener_ns
+
+    # a configured redis namespace instance
+    def redis
+      uri = self.redistogo_url
+      _r = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
+      Redis::Namespace.new(self.ns, redis: _r)
+    end
 
     # return the URI for the redistogo url
     def redistogo_url
@@ -82,7 +92,7 @@ class Shortener
     # are the necessary options present for S3 to work?
     def s3_configured
       ret = true
-      [:S3_KEY_PREFIX, :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY, 
+      [:S3_KEY_PREFIX, :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY,
         :S3_DEFAULT_ACL, :S3_BUCKET ].each do |k|
         ret = !@options[k].nil? unless ret == false
       end

@@ -123,7 +123,7 @@ namespace :short do
 
     desc "config a Heroku app the way we need it. Optionally set APPNAME to set heroku app name"
     task :config do
-      require_relative '../lib/shortener'
+      require 'shortener'
       $name = ENV['APPNAME'] || "shner-#{`whoami`.chomp}"
       cmd = Dir.pwd =~ /heroku$/ ? "" : "cd heroku && "
       cmd += "heroku create #{$name}"
@@ -146,6 +146,31 @@ namespace :short do
         " http://#{$name}.heroku.com\n\n" +
         "the Custom Domain Addon has been added, but still needs configuring, for" +
         " steps see\n http://devcenter.heroku.com/articles/custom-domains"
+    end # => setup
+
+  end # => heroku
+
+  namespace :data do 
+
+    desc "replace hyphenated keys with sanitized ones."
+    task :dehyphenate_keys do
+      require 'shortener'
+      redis = Shortener::Configuration.new.redis
+      redis.keys("data:*").each do |k|
+        hsh = redis.hgetall(k)
+        puts "checking #{hsh}" if ENV['VERBOSE']
+        set_count, click_count = hsh['set-count'], hsh['click_count']
+        arr = Array.new
+        arr.concat([:set_count, set_count]) unless set_count.nil?
+        arr.concat([:click_count, click_count]) unless click_count.nil?
+        puts "** setting: #{arr.inspect}" if ENV['VERBOSE']
+        redis.hmset(k, *arr)
+        redis.hdel(k, 'set-count')
+        redis.hdel(k, 'click-count')
+        puts "#{k} afterwards: #{redis.hgetall(k)}" if ENV['VERBOSE']
+      end
     end
-  end
-end
+
+  end # => data
+
+end # => short
