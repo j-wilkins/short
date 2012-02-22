@@ -9,13 +9,20 @@ for obvious reasons, the demo is configured with S3 disabled. However, if you ar
 to play around with `short` follow the instructions below and use `http://shortener1.heroku.com`
 as your the url you want to use.
 
+## Upgrading to 0.5.0
+
+v0.5.0 updates how shortener stores some data. To assist in keeping your data,
+v0.5.0 also provides a `rake short:data:dehyphenate_keys` task that will update
+your existing data to the new schema. If have data from < 0.5 that you plan on
+using in a >= 0.5 world, you should run this task.
+
 ### Installation
 
-is now as easy as 
+is now as easy as
 
 `gem install short`
 
-and 
+and
 
 `short`
 
@@ -84,7 +91,7 @@ the `Shortener` class or directly through the `Shortener::Short` class. You get:
 * fetch
 * delete
 
-methods, each of which will return a/n istance of the `Short` class which will 
+methods, each of which will return a/n istance of the `Short` class which will
 parse the data and provide some defaults and access to said data.
 
 ### Executable
