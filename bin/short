@@ -92,8 +92,8 @@ end
 def build
   gem_dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
   require 'rake'; load 'shortener/tasks/heroku.rake'
-  Rake::Task[:'heroku:build'].execute
-  Rake::Task[:'heroku:git'].execute
+  Rake::Task[:'short:heroku:build'].execute
+  puts "Your shortener repo has been created, cd there to finish up the process"
 end
 
 def do_action(act, arg)
@@ -114,7 +114,7 @@ def usage
     delete:   delete a short from the index.
     index:    show summary data for all shorts.
 
-    rake:     run a shortener rake task. [heroku:build, heroku:setup...]
+    build:    Generate a shortener server folder.
     server:   start an instance of the shortener server locally.
 
   the default command is shorten, so that one could
