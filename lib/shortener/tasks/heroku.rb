@@ -10,7 +10,7 @@ namespace :short do
     end
 
     def _file(f)
-      fs = $existing_repo ? [f.to_s] : ['heroku', f.to_s]
+      fs = $existing_repo ? [f.to_s] : ['shortener-heroku', f.to_s]
       File.join(Dir.pwd, *fs)
     end
 
@@ -36,7 +36,7 @@ namespace :short do
       if ENV['VERBOSE']
         msg = "#{action}: #{start} "
         msg += "=> #{nd}" unless nd.nil?
-        puts msg 
+        puts msg
       end
     end
 
@@ -63,19 +63,19 @@ namespace :short do
 
     desc "Build a Heroku Ready Git repo"
     task :build do
-      FileUtils.mkdir(File.join(Dir.pwd, 'heroku')) unless $existing_repo
-      [:'server', :'server/public', :'server/views', 
-       :'server/views/s3', :'server/public/flash', 
-       :'server/public/skin', :'server/public/images', 
+      FileUtils.mkdir(File.join(Dir.pwd, 'shortener-heroku')) unless $existing_repo
+      [:'server', :'server/public', :'server/views',
+       :'server/views/s3', :'server/public/flash',
+       :'server/public/skin', :'server/public/images',
        :'server/public/skin/blue.monday'].each do |f|
         unless File.exist?(_file(f))
           puts "creating #{_file(f)}" if ENV['VERBOSE']
-          FileUtils.mkdir(_file(f)) 
+          FileUtils.mkdir(_file(f))
         end
       end
 
       ['server', 'server/public', 'server/views', :'server/views/s3',
-       :'server/public/flash', :'server/public/images', :'server/public/skin', 
+       :'server/public/flash', :'server/public/images', :'server/public/skin',
        :'server/public/skin/blue.monday'].each do |end_point|
         Dir["#{$gem_dir}/#{end_point}/**"].each do |f|
           next if File.directory?(f)
@@ -100,13 +100,13 @@ namespace :short do
       _l(:renaming, _s, _e)
       FileUtils.mv(_s, _e)
       File.open(_file(:Rakefile), 'w+') do |f|
-        f.puts "load 'shortener/tasks/heroku.rake'"
-      end 
+        f.puts "require 'shortener/tasks/heroku'"
+      end
     end
 
     desc "initialize the Git repo"
     task :git do
-      cmd = "git init heroku && cd heroku && git add . && git commit -m initial"
+      cmd = "git init && git add . && git commit -m initial"
       sh cmd
     end
 
@@ -140,8 +140,8 @@ namespace :short do
       sh cmd
     end
 
-    desc "Build, configure and push a shortener app to Heroku"
-    task :setup => [:build, :config, :push] do
+    desc "Init, configure and push a shortener app to Heroku"
+    task :setup => [:git, :config, :push] do
       puts "\nYour app has (hopefully) been created and pushed and available @" +
         " http://#{$name}.heroku.com\n\n" +
         "the Custom Domain Addon has been added, but still needs configuring, for" +
@@ -150,7 +150,7 @@ namespace :short do
 
   end # => heroku
 
-  namespace :data do 
+  namespace :data do
 
     desc "replace hyphenated keys with sanitized ones."
     task :dehyphenate_keys do

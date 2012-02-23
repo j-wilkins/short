@@ -91,7 +91,7 @@ end
 
 def build
   gem_dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
-  require 'rake'; load 'shortener/tasks/heroku.rake'
+  require 'rake'; require 'shortener/tasks/heroku'
   Rake::Task[:'short:heroku:build'].execute
   puts "Your shortener repo has been created, cd there to finish up the process"
 end
