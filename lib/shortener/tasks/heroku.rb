@@ -159,12 +159,12 @@ namespace :short do
       redis.keys("data:*").each do |k|
         hsh = redis.hgetall(k)
         puts "checking #{hsh}" if ENV['VERBOSE']
-        set_count, click_count = hsh['set-count'], hsh['click_count']
+        set_count, click_count = hsh['set-count'], hsh['click-count']
         arr = Array.new
         arr.concat([:set_count, set_count]) unless set_count.nil?
         arr.concat([:click_count, click_count]) unless click_count.nil?
         puts "** setting: #{arr.inspect}" if ENV['VERBOSE']
-        unless arr.empty?
+        unless arr.empty? || ENV['DRY_RUN']
           redis.hmset(k, *arr)
           redis.hdel(k, 'set-count')
           redis.hdel(k, 'click-count')
