@@ -1,130 +1,103 @@
-%script{src: "swfupload.js"}
-%script{src: "jquery-swfupload-min.js"}
-:erb
-  <script>
-  $(function(){
-      $('#swfupload-control').swfupload({
-          // Backend Settings
-          upload_url: "<%= @upload_url %>",    // Relative to the SWF file (or you can use absolute paths)
-          http_success : [ 200, 201, 204 ],     // FOR AWS
-
-          // File Upload Settings
-          file_size_limit : "102400", // 100MB
-          file_types : "*.*",
-          file_types_description : "All Files",
-          file_upload_limit : "10",
-          file_queue_limit : "0",
-          file_post_name : "file",        // FOR AWS
-
-          // Button settings
-          button_image_url : "/images/XPButtonUploadText_61x22.png",
-          button_placeholder_id : "span-button-placeholder",
-          button_width: 61,
-          button_height: 22,
-
-          // Flash Settings
-          flash_url : "/flash/swfupload.swf",
-          //debug: true,
-          post_params: <%= @post.to_json %>   // FOR AWS
-
-      })
-          .bind('fileQueued', function(event, file){
-            // start the upload since it's queued
-            //$(this).swfupload('startUpload');
-            $(this).swfupload('setButtonDisabled', true);
-            $('#file-name-placeholder').text(file.name);
-          })
-          .bind('fileQueueError', function(event, file, errorCode, message){
-            //$('#log').append('<li>File queue error - '+message+'</li>');
-            //$(this).show();
-          })
-          .bind('uploadStart', function(event, file){
-            $('#progressbar').show();
-          })
-          .bind('uploadProgress', function(event, file, bytesLoaded){
-            var avg = bytesLoaded / file.size * 100;
-            //$('#log').append('<li>Upload progress - '+bytesLoaded+ ' ' + avg + '</li>');
-            $('#progressbar .bar').css('width', avg + '%' );
-          })
-          .bind('uploadSuccess', function(event, file, serverData){
-            //$('#log').append('<li>Upload success - '+file.name+'</li>');
-          })
-          .bind('uploadComplete', function(event, file){
-            //$('#log').append('<li>Upload complete - '+file.name+'</li>');
-            $('#progressbar .active').removeClass('active');
-
-            var values = $('#upload-form').serialize();
-            values += '&shortener%5bfile_name%5d=' + file.name;
-            // Change this callback function to suite your needs
-            // $.ajax({
-            //   type: "POST",
-            //   url: '/upload',
-            //   data: "name=" + file.name,
-            //   async: false,
-            // });
-            $.post('/upload.json', values, function(data){
-              $('#shortener-display').html(data.html)
-                .removeClass('hide');
-            });
-
-            // upload has completed, lets try the next one in the queue
-            $(this).swfupload('startUpload');
-          })
-          .bind('uploadError', function(event, file, errorCode, message){
-            //$('#log').append('<li>Upload error - '+message+'</li>');
-          });
-
-  });
-  </script>
-
+%script{src: "js/swfupload.js"}
+%script{src: "js/jquery-swfupload-min.js"}
 .row
-  #progressbar.span8{style: 'display:none;'}
-    .progress.danger.active.striped
-      .bar{style: "width: 0%"}
-
-.row
-  %div.offset1{:id=> "swfupload-control"}
-    %ol{:id=> "log"}
-    %span{:id=> "span-button-placeholder"}
-    %span{id: 'file-name-placeholder'}
-%br
-
-.row
-  %form.form{id: 'upload-form', action: '/upload', method: 'post'}
-    .row
-      %ul.offset2
-        %li.radio
-          %input{name: 'shortener[type]', type: 'radio', value: 'video'} Video
-        %li.radio
-          %input{name: 'shortener[type]', type: 'radio', value: 'audio'} Audio
-        %li.radio
-          %input{name: 'shortener[type]', type: 'radio', value: 'image'} Image
-        %li.radio
-          %input{name: 'shortener[type]', type: 'radio', value: 'download'} Download
-      .row
-        #shortener-display.offset8.hide
-      .field
-        %label{for: 'shorterner[name]'} Name
+  %form.form-horizontal{id: 'upload-form', action: '/upload', method: 'post'}
+    .control-group
+      %label.control-label Select File:
+      .controls
+        %div{:id=> "swfupload-control"}
+          %ol{:id=> "log"}
+          %span{:id=> "span-button-placeholder"}
+          %span{id: 'file-name-placeholder'}
+    .control-group.hideable
+      %label.control-label Display Type:
+      .controls
+        %label.radio.inline
+          %input{name: 'shortener[type]', type: 'radio', value: 'video'} 
+            Video
+        %label.radio.inline
+          %input{name: 'shortener[type]', type: 'radio', value: 'audio'} 
+          Audio
+        %label.radio.inline
+          %input{name: 'shortener[type]', type: 'radio', value: 'image'} 
+          Image
+        %label.radio.inline
+          %input{name: 'shortener[type]', type: 'radio', value: 'download'} 
+          Download
+    .control-group.hideable
+      %label.control-label{for: 'shorterner[name]'} Name
+      .controls
         %input{type: 'text', name: 'shortener[name]'}
-      .field
-        %label{for: 'shorterner[description]'} Description
+    .control-group.hideable
+      %label.control-label{for: 'shorterner[description]'} Description
+      .controls
         %input{type: 'text', name: 'shortener[description]'}
+    .form-actions.hideable
+      %input.btn-primary{type: 'submit', value: 'Shorten'}
     .row
-      .actions
-        %input.btn.primary{type: 'submit', value: 'Shorten'}
-
-.row
-
-:css
-  .radio {
-    display: inline;
-    margin-right: 20px;
-  }
+      #progressbar.offset1.span4{style: 'display:none;'}
+        .progress.progress-danger.active.progress-striped
+          .bar{style: "width: 0%"}
+    .row
+      #shortener-display.offset2.hide
 
 :javascript
-  $('#upload-form').submit(function(e){
-    e.preventDefault();
-    $('#swfupload-control').swfupload('startUpload');
+  $(function(){
+    $('#swfupload-control').swfupload({
+      // Backend Settings
+      upload_url: "#{@upload_url}",    
+      http_success : [ 200, 201, 204 ],     // FOR AWS
+
+      // File Upload Settings
+      file_size_limit : "102400", // 100MB
+      file_types : "*.*",
+      file_types_description : "All Files",
+      file_upload_limit : "10",
+      file_queue_limit : "0",
+      file_post_name : "file",        // FOR AWS
+
+      // Button settings
+      button_image_url : "/images/XPButtonUploadText_61x22.png",
+      button_placeholder_id : "span-button-placeholder",
+      button_width: 61,
+      button_height: 22,
+
+      // Flash Settings
+      flash_url : "/flash/swfupload.swf",
+      //debug: true,
+      post_params: #{@post.to_json}   // FOR AWS
+
+    })
+    .bind('fileQueued', function(event, file){
+      $(this).swfupload('setButtonDisabled', true);
+      $('#file-name-placeholder').text(file.name);
+    })
+    .bind('uploadStart', function(event, file){
+      $('#progressbar').show();
+      $('.hideable').hide();
+      $('.form-actions').hide();
+    })
+    .bind('uploadProgress', function(event, file, bytesLoaded){
+      var avg = bytesLoaded / file.size * 100;
+      $('#progressbar .bar').css('width', avg + '%' );
+    })
+    .bind('uploadSuccess', function(event, file, serverData){
+      var values = $('#upload-form').serialize();
+      values += '&shortener%5bfile_name%5d=' + file.name;
+      $.post('/upload.json', values, function(data){
+        $('#shortener-display').html(data.html)
+          .removeClass('hide');
+      });
+
+      })
+      .bind('uploadComplete', function(event, file){
+        $('#progressbar .bar').css('width', '100%')
+        $('#progressbar .active').removeClass('active');
+        $('.control-group').hide();
+      })
+
+    $('#upload-form').submit(function(e){
+      e.preventDefault();
+      $('#swfupload-control').swfupload('startUpload');
+    });
   });
-
-
