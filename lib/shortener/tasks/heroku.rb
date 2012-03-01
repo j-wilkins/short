@@ -64,8 +64,8 @@ namespace :short do
     desc "Build a Heroku Ready Git repo"
     task :build do
       FileUtils.mkdir(File.join(Dir.pwd, 'shortener-heroku')) unless $existing_repo
-      [:'server', :'server/public', :'server/views',
-       :'server/views/s3', :'server/public/flash',
+      [:'server', :'server/public', :'server/views', :'server/views/s3', 
+        :'server/public/flash', :'server/public/js', :'server/public/css',
        :'server/public/skin', :'server/public/images',
        :'server/public/skin/blue.monday'].each do |f|
         unless File.exist?(_file(f))
@@ -76,7 +76,8 @@ namespace :short do
 
       ['server', 'server/public', 'server/views', :'server/views/s3',
        :'server/public/flash', :'server/public/images', :'server/public/skin',
-       :'server/public/skin/blue.monday'].each do |end_point|
+       :'server/public/skin/blue.monday', :'server/public/js', 
+       :'server/public/css'].each do |end_point|
         Dir["#{$gem_dir}/#{end_point}/**"].each do |f|
           next if File.directory?(f)
           end_point = _file(:"#{_ep(f)}")
