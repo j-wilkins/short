@@ -205,6 +205,16 @@ class Shortener
         hsh.keys.map {|k| [k, hsh[k]] }.flatten
       end
 
+      def boxify_class(int, boxify_classes = '', nonbox_classes = '', other_classes = '')
+        str = if @boxify 
+                "#{other_classes} #{boxify_classes}" 
+              else
+                "#{other_classes} #{nonbox_classes}"
+              end
+        str = str + " offset#{int}" unless !int.nil? && @boxify
+        str
+      end
+
     end
 
     before do
@@ -216,7 +226,8 @@ class Shortener
     end
 
     get '/add' do
-      haml :add
+      @boxify = !params['boxify'].nil?
+      haml :add, layout: !@boxify
     end
 
     get '/index.?:format?' do
@@ -259,7 +270,8 @@ class Shortener
       }
 
       @upload_url = "http://#{$conf.s3_bucket}.s3.amazonaws.com/"
-      haml :upload
+      @boxify = !params['boxify'].nil?
+      haml :upload, layout: !@boxify
     end
 
     #get '/:id.?:format?' do

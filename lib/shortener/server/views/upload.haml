@@ -1,7 +1,7 @@
 %script{src: "js/swfupload.js"}
 %script{src: "js/jquery-swfupload-min.js"}
 .row
-  %form.form-horizontal{id: 'upload-form', action: '/upload', method: 'post'}
+  %form.form-horizontal.span6{id: 'upload-form', action: '/upload', method: 'post'}
     .control-group
       %label.control-label Select File:
       .controls
@@ -35,11 +35,11 @@
     .form-actions.hideable
       %input.btn-primary{type: 'submit', value: 'Shorten'}
     .row
-      #progressbar.offset1.span4{style: 'display:none;'}
+      #progressbar.span4.offset1{style: 'display:none;'}
         .progress.progress-danger.active.progress-striped
           .bar{style: "width: 0%"}
-    .row
-      #shortener-display.offset2.hide
+
+#display-up-new-shorts{class: boxify_class(nil, nil, 'container')}
 
 :javascript
   $(function(){
@@ -85,19 +85,19 @@
       var values = $('#upload-form').serialize();
       values += '&shortener%5bfile_name%5d=' + file.name;
       $.post('/upload.json', values, function(data){
-        $('#shortener-display').html(data.html)
-          .removeClass('hide');
+        $('#display-up-new-shorts').append(data.html)
       });
 
-      })
-      .bind('uploadComplete', function(event, file){
-        $('#progressbar .bar').css('width', '100%')
-        $('#progressbar .active').removeClass('active');
-        $('.control-group').hide();
-      })
+    })
+    .bind('uploadComplete', function(event, file){
+      $('#progressbar .bar').css('width', '100%')
+      $('#progressbar .active').removeClass('active');
+      $('.control-group').hide();
+    })
 
     $('#upload-form').submit(function(e){
       e.preventDefault();
       $('#swfupload-control').swfupload('startUpload');
     });
   });
+

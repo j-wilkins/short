@@ -1,28 +1,50 @@
-#shortener.row(style="margin-top: 40px;")
-  %form{:id => 'add-form',:name => "shortener", :action => "/add", :method => "post", :class => 'offset2 form-horizontal'}
+#shortener.row(style="margin-top: 40px;margin-bottom:75px;")
+  %form{:id => 'add-form',:name => "shortener", :action => "/add", :method => "post", :class => boxify_class(2, nil, nil, 'form-horizontal')}
     .control-group
       %label.control-label{:for => "shortener[url]"} Url to Shorten:
       .controls
         %input{:type => "text", :name => "shortener[url]", :class => "text"}
         %input{:type => "submit", :value => "Shorten", :class => "btn primary"}
-        %a{:onClick => '$(".advanced").fadeIn();'} Show Advanced Options
-    .control-group
+        %a#advanced-toggle{:onClick => 'window.showHideAdvanced();', href: '#'} Show Advanced Options
+    .control-group.advanced
       %label{:for => 'shortener[expire]', :class => 'control-label advanced'} Time till Expired:
       .controls
         %input{:type => 'text', :name => 'shortener[expire]', :class => 'text advanced'}
-    .control-group
+    .control-group.advanced
       %label{:for => 'shortener[max-clicks]', :class => 'control-label advanced'} Max Clicks:
       .controls
         %input{:type => 'text', :name => 'shortener[max-clicks]', :class => 'text advanced'}
-    .control-group
+    .control-group.advanced
       %label{:for => 'shortener[desired-short]', :class => 'control-label advanced'} Desired Short:
       .controls
         %input{:type => 'text', :name => 'shortener[desired-short]', :class => 'text advanced'}
-    .control-group
-      %label{:for => 'shortener[allow-override]', :class => 'control-label advanced'} Allow Random Override:
+    .control-group.advanced
+      %label{:for => 'shortener[allow-override]', :class => 'control-label'} Allow Random Override:
       .controls
         %input{:type => 'checkbox', :name => 'shortener[allow-override]', :class => 'text advanced', :value => 'true'}
     :javascript
       $(function(){
-        $('.advanced').hide();
+        $('.advanced').addClass('hide');
+        $("#add-form").submit(function(event) {
+
+          /* stop form from submitting normally */
+          event.preventDefault();
+
+          // my best take so far at scraping form data
+          var formData = {};
+          $.each($(this).serializeArray(), function(i, field) {
+            formData[field.name] = field.value;
+          });
+
+          /* Send the data using post and put the results in a div */
+          $.post( this.action + '.json', formData, function( data ) {
+            $( "#display-add-new-shorts" ).append( data.html );
+            }
+          );
+
+        });
       })
+  #display-add-new-shorts{class: boxify_class(3)}
+
+:css
+  .hide { display: none;}

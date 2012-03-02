@@ -1,0 +1,16 @@
+
+table.table thead .header,
+table.table thead .sorting_asc,
+table.table thead .sorting_desc,
+table.table thead .sorting_asc_disabled,
+table.table thead .sorting_desc_disabled {
+    cursor: pointer;
+    *cursor: hand;
+}
+ 
+table.table thead .header { background: url('/images/sort_both.png') no-repeat center right; }
+table.table thead .headerSortUp { background: url('/images/sort_asc.png') no-repeat center right; }
+table.table thead .headerSortDown { background: url('/images/sort_desc.png') no-repeat center right; }
+ 
+table.table thead .sorting_asc_disabled { background: url('/images/sort_asc_disabled.png') no-repeat center right; }
+table.table thead .sorting_desc_disabled { background: url('/images/sort_desc_disabled.png') no-repeat center right; }

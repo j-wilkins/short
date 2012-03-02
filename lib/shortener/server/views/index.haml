@@ -1,5 +1,6 @@
+#display-new-shorts.container
 #shorterner-index
-  %table.table.table-striped
+  %table.table.table-striped.tablesorter
     %thead
       %tr
         %th Shortened
@@ -20,6 +21,6 @@
           %td= short['max-clicks'] || "&infin;"
           %td
             %a{href: "/delete/#{short['shortened']}", class: 'delete-button'}
-              %img{src: 'delete-icon.png', alt: 'delete!', width: '16px', height: '16px'}
+              %img{src: 'images/delete-icon.png', alt: 'delete!', width: '16px', height: '16px'}
           %td= clippy("#{base_url}/#{short['shortened']}")
 
