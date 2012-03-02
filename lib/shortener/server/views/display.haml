@@ -1,5 +1,7 @@
-#link_display.row
-  %div.span2{class: 'offset1'}
-    %h4= @url
-  %div.span2
-    = clippy(@url)
+#link_display
+  .alert.alert-success{style: 'padding-bottom:25px;'}
+    %div.span2{class: 'offset1'}
+      %h4= @url
+    %div.span2
+      = clippy(@url, '#dff0d8')
+    %a.close{'data-dismiss' => 'alert', href: '#'}×
