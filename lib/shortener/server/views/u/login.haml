@@ -1,0 +1,13 @@
+
+.row
+  %form{action: '/api/v1/u/login', method: 'post'}
+    .control-group
+      %label.control-label{for: 'user[username]'} Username:
+      .controls
+        %input{type: 'text', name: 'user[username]', class: 'text'}
+    .control-group
+      %label.control-label{for: 'user[password]'} Password:
+      .controls
+        %input{type: 'password', name: 'user[password]', class: 'password'}
+
+    %input{type: 'submit', value: 'Login', class: 'btn primary'}

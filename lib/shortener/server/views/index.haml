@@ -20,7 +20,7 @@
           %td= ttl_display(short['expire'])
           %td= short['max-clicks'] || "&infin;"
           %td
-            %a{href: "/delete/#{short['shortened']}", class: 'delete-button'}
-              %img{src: 'images/delete-icon.png', alt: 'delete!', width: '16px', height: '16px'}
+            %a{href: "/api/v1/delete?id=#{short['shortened']}", class: 'delete-button'}
+              %img{src: '/images/delete-icon.png', alt: 'delete!', width: '16px', height: '16px'}
           %td= clippy("#{base_url}/#{short['shortened']}")
 

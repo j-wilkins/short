@@ -1,7 +1,7 @@
-%script{src: "js/swfupload.js"}
-%script{src: "js/jquery-swfupload-min.js"}
+%script{src: "/js/swfupload.js"}
+%script{src: "/js/jquery-swfupload-min.js"}
 .row
-  %form.form-horizontal.span6{id: 'upload-form', action: '/upload', method: 'post'}
+  %form.form-horizontal.span6{id: 'upload-form', action: '/api/v1/upload', method: 'post'}
     .control-group
       %label.control-label Select File:
       .controls
@@ -13,16 +13,16 @@
       %label.control-label Display Type:
       .controls
         %label.radio.inline
-          %input{name: 'shortener[type]', type: 'radio', value: 'video'} 
+          %input{name: 'shortener[type]', type: 'radio', value: 'video'}
             Video
         %label.radio.inline
-          %input{name: 'shortener[type]', type: 'radio', value: 'audio'} 
+          %input{name: 'shortener[type]', type: 'radio', value: 'audio'}
           Audio
         %label.radio.inline
-          %input{name: 'shortener[type]', type: 'radio', value: 'image'} 
+          %input{name: 'shortener[type]', type: 'radio', value: 'image'}
           Image
         %label.radio.inline
-          %input{name: 'shortener[type]', type: 'radio', value: 'download'} 
+          %input{name: 'shortener[type]', type: 'radio', value: 'download'}
           Download
     .control-group.hideable
       %label.control-label{for: 'shorterner[name]'} Name
@@ -45,7 +45,7 @@
   $(function(){
     $('#swfupload-control').swfupload({
       // Backend Settings
-      upload_url: "#{@upload_url}",    
+      upload_url: "#{@upload_url}",
       http_success : [ 200, 201, 204 ],     // FOR AWS
 
       // File Upload Settings
@@ -84,7 +84,7 @@
     .bind('uploadSuccess', function(event, file, serverData){
       var values = $('#upload-form').serialize();
       values += '&shortener%5bfile_name%5d=' + file.name;
-      $.post('/upload.json', values, function(data){
+      $.post('/api/v1/upload', values, function(data){
         $('#display-up-new-shorts').append(data.html)
       });
 

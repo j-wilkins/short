@@ -16,9 +16,10 @@ class Shortener
 
     OPTIONS = [:SHORTENER_URL, :DEFAULT_URL, :REDISTOGO_URL, :S3_KEY_PREFIX,
       :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY, :S3_DEFAULT_ACL, :S3_BUCKET,
-      :DOTFILE_PATH, :S3_ENABLED, :SHORTENER_NS]
+      :DOTFILE_PATH, :S3_ENABLED, :SHORTENER_NS, :REQUIRE_AUTH, :ALLOW_SIGNUP,
+      :VIEWS]
 
-    HEROKU_IGNORE = [:DOTFILE_PATH, :SHORTENER_URL, :REDISTOGO_URL]
+    HEROKU_IGNORE = [:DOTFILE_PATH, :SHORTENER_URL, :REDISTOGO_URL, :REQUIRE_AUTH]
 
     END_POINTS = [:add, :fetch, :upload, :index, :delete]
 
@@ -34,6 +35,14 @@ class Shortener
         @options = @options.merge!(opts)
         @options[:DEFAULT_URL] ||= '/index'
         @options[:SHORTENER_NS] ||= :shortener
+        @options[:VIEWS] = !(@options[:VIEWS] == false || @options[:VIEWS] == 'false')
+        @options[:ALLOW_SIGNUP] = @options.has_key?(:ALLOW_SIGNUP)
+        if @options[:REQUIRE_AUTH].is_a?(String) || @options[:REQUIRE_AUTH].is_a?(Symbol)
+          @options[:REQUIRE_AUTH] = @options[:REQUIRE_AUTH].to_s.split(',').map do |auth|
+            auth.upcase.to_sym
+          end
+        end
+        @options[:REQUIRE_AUTH] ||= []
       else
         @options = Configuration.current.options
       end
@@ -53,11 +62,20 @@ class Shortener
     def to_params
       ret = Array.new
       @options.each {|k,v| ret << "#{k}=#{v}" unless HEROKU_IGNORE.include?(k)}
+      _ra = @options[:REQUIRE_AUTH].join(',')
+      ret << "REQUIRE_AUTH=#{_ra}"
       ret.join(" ")
     end
 
+    def to_json
+      safe_options = @options.delete_if do |k|
+        [:S3_SECRET_ACCESS_KEY, :S3_ACCESS_KEY_ID, :REDISTOGO_URL].include?(k)
+      end
+      safe_options.to_json
+    end
+
     OPTIONS.each do |opt|
-      next if [:REDISTOGO_URL, :S3_ENABLED].include?(opt)
+      next if [:REDISTOGO_URL, :S3_ENABLED, :REQUIRES_AUTH].include?(opt)
       method_name = opt.to_s.downcase.to_sym
       define_method "#{method_name}" do
         @options[opt]
@@ -126,6 +144,19 @@ class Shortener
     def s3_signature(policy)
       signature = Base64.encode64(OpenSSL::HMAC.digest(
         OpenSSL::Digest::Digest.new('sha1'), s3_secret_access_key, policy)).gsub("\n","")
+    end
+
+    # a boolean indicating whether we should use authentication
+    def authenticate?
+      !(@options[:REQUIRE_AUTH] == [])
+    end
+
+    # check if this endpoint needs auth
+    def auth_route?(url)
+      ep = url.split('/').last
+      return false if ep.nil?
+      ep.gsub!('.json', '')
+      @options[:REQUIRE_AUTH].include?(ep.upcase.to_sym)
     end
 
     private

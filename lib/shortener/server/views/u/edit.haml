@@ -1,0 +1,40 @@
+.row
+  %form{action: @action, method: 'post'}
+    %input{type: 'hidden', value: @user.id}
+    .control-group
+      %label.control-label{for: 'user[username]'} Username:
+      .controls
+        %input{type: 'text', name: 'user[username]', class: 'text', value: @user.username}
+    .control-group
+      %label.control-label{for: 'user[email]'} Email
+      .controls
+        %input{type: 'text', name: 'user[email]', class: 'text', value: @user.email}
+    .control-group
+      %label.control-label{for: 'user[name]'} Name
+      .controls
+        %input{type: 'text', name: 'user[name]', class: 'text', value: @user.name}
+    .control-group
+      %label.control-label{for: 'user[password]'} Password:
+      .controls
+        %input{type: 'password', name: 'user[password]', class: 'password'}
+
+    %input{type: 'submit', value: 'Update', class: 'btn primary'}
+- if @action.include?("update")
+  .row
+    %form{action: '/api/v1/u/reset_token.json', method: 'post', class: 'form-inline'}
+      %fieldset
+        %legend API Access
+        .control-group
+          %label API Token:
+          %label= @user.token
+        .control-group
+          %input{type: 'submit', value: 'RESET', class: 'btn btn-warning', style: "padding: 4px 14px 4px 13px"}
+          %label{style: 'margin-right: 3px;'} Reseting your token will invalidate all the ones stored by your apps.
+  .row
+    %form{action: '/api/v1/u/delete', method: 'post', class: 'form-inline'}
+      %fieldset
+        %legend Danger Zone
+        .control-group
+          %input{type: 'submit', value: 'DELETE', class: 'btn btn-danger'}
+            %label{for: 'user[delete]'} Deleting is Forever™.
+        -#%a{href: '/api/v1/u/delete', class: 'btn btn-warning'} DELETE

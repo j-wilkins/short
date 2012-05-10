@@ -64,10 +64,10 @@ namespace :short do
     desc "Build a Heroku Ready Git repo"
     task :build do
       FileUtils.mkdir(File.join(Dir.pwd, 'shortener-heroku')) unless $existing_repo
-      [:'server', :'server/public', :'server/views', :'server/views/s3', 
+      [:'server', :'server/public', :'server/views', :'server/views/s3',
         :'server/public/flash', :'server/public/js', :'server/public/css',
-       :'server/public/skin', :'server/public/images',
-       :'server/public/skin/blue.monday'].each do |f|
+       :'server/public/skin', :'server/public/images', :'server/views/u',
+       :'server/public/skin/blue.monday', 'server/api'].each do |f|
         unless File.exist?(_file(f))
           puts "creating #{_file(f)}" if ENV['VERBOSE']
           FileUtils.mkdir(_file(f))
@@ -76,8 +76,8 @@ namespace :short do
 
       ['server', 'server/public', 'server/views', :'server/views/s3',
        :'server/public/flash', :'server/public/images', :'server/public/skin',
-       :'server/public/skin/blue.monday', :'server/public/js', 
-       :'server/public/css'].each do |end_point|
+       :'server/public/skin/blue.monday', :'server/public/js', :'server/views/u',
+       :'server/public/css', 'server/api'].each do |end_point|
         Dir["#{$gem_dir}/#{end_point}/**"].each do |f|
           next if File.directory?(f)
           end_point = _file(:"#{_ep(f)}")
@@ -85,9 +85,9 @@ namespace :short do
           FileUtils.cp(f, end_point)
         end
       end
-      _s, _e = gem_file('server.rb'), _file(:'main.rb')
-      _l(:copying, _s, _e)
-      FileUtils.cp(_s, _e)
+      #_s, _e = gem_file('server.rb'), _file(:'main.rb')
+      #_l(:copying, _s, _e)
+      #FileUtils.cp(_s, _e)
       _s, _e = gem_file('configuration.rb'), _file(:'configuration.rb')
       _l(:copying, _s, _e)
       FileUtils.cp(_s, _e)
@@ -124,14 +124,19 @@ namespace :short do
 
     desc "config a Heroku app the way we need it. Optionally set APPNAME to set heroku app name"
     task :config do
-      require 'shortener'
       $name = ENV['APPNAME'] || "shner-#{`whoami`.chomp}"
       cmd = Dir.pwd =~ /heroku$/ ? "" : "cd heroku && "
       cmd += "heroku create #{$name}"
       cmd += " && heroku addons:add redistogo:nano"
-      cmd += " && heroku config:add #{Shortener::Configuration.new.to_params}"
       cmd += " && heroku addons:add custom_domains:basic"
+      Rake::Task[:update_config].execute
       sh cmd
+    end
+
+    desc "Update Heroku env vars with Shortener::Config dump"
+    task :update_config do
+      require 'shortener'
+      sh "heroku config:add #{Shortener::Configuration.new.to_params}"
     end
 
     desc "Push to Heroku"

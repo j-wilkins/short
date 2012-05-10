@@ -2,11 +2,11 @@
 %html
   %head
     %title Shortener
-    %script{src: '//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js', type: 'text/javascript'}
     %link{rel: 'stylesheet', type: 'text/css', href: '/css/bootstrap.min.css'}
     %link{rel: 'stylesheet', type: 'text/css', href: '/css/bootstrap-responsive.min.css'}
     %link{rel: 'stylesheet', type: 'text/css', href: '/css/shortener.css'}
     %link{rel: 'stylesheet', type: 'text/css', href: '/css/colorbox.css'}
+    %script{src: '//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js', type: 'text/javascript'}
     %script{src: '/js/site.js', type: 'text/javascript'}
     %script{src: '/js/jquery.colorbox.js', type: 'text/javascript'}
     %script{src: '/js/bootstrap.min.js', type: 'text/javascript'}
@@ -18,16 +18,33 @@
         %div.container
           %a{class: 'brand', href: "/"} Shortener
           %ul.nav
-            %li
-              %form{:id => 'nav-add-form',:name => "shortener", :action => "/add", :method => "post", :class => 'navbar-search pull-left'}
-                %input{:type => "text", :name => "shortener[url]", :class => "search-query span2", placeholder: 'Shorten'}
-            %li
-              %a{href: '/index'} Index
-            %li
-              %a.colorbox{href: '/add'} Advanced Add
-            - if $conf.s3_available
+            - if available?('add')
               %li
-                %a.colorbox{href: '/upload'} Upload
+                %form{:id => 'nav-add-form',:name => "shortener", :action => "/api/v1/add", :method => "post", :class => 'navbar-search pull-left'}
+                  %input{:type => "text", :name => "shortener[url]", :class => "search-query span2", placeholder: 'Shorten'}
+            - if available?('index')
+              %li
+                %a{href: '/v/index'} Index
+            - if available?('aadd')
+              %li
+                %a.colorbox{href: '/v/add'} Advanced Add
+            - if $conf.s3_available && available?('upload')
+              %li
+                %a.colorbox{href: '/v/upload'} Upload
+          %ul.nav.pull-right
+            - if $conf.authenticate?
+              - if logged_in?
+                %li.pull-right
+                  %a{href: '/api/v1/u/logout', class: 'pull-right'} Log Out
+                %li.pull-right
+                  %a{href: '/u/edit', class: 'pull-right'} Edit Me
+              - else
+                %li.pull-right
+                  %a{href: '/u/login', class: 'pull-right'} Log In
+                - if $conf.allow_signup
+                  %li.pull-right
+                    %a{href: '/u/signup', class: 'pull-right'} Sign Up
+
 
     #main.container(style="margin-top: 40px;")
       = yield

@@ -1,5 +1,5 @@
 #shortener.row(style="margin-top: 40px;margin-bottom:75px;")
-  %form{:id => 'add-form',:name => "shortener", :action => "/add", :method => "post", :class => boxify_class(2, nil, nil, 'form-horizontal')}
+  %form{:id => 'add-form',:name => "shortener", :action => "/api/v1/add", :method => "post", :class => boxify_class(2, nil, nil, 'form-horizontal')}
     .control-group
       %label.control-label{:for => "shortener[url]"} Url to Shorten:
       .controls
@@ -11,17 +11,17 @@
       .controls
         %input{:type => 'text', :name => 'shortener[expire]', :class => 'text advanced'}
     .control-group.advanced
-      %label{:for => 'shortener[max-clicks]', :class => 'control-label advanced'} Max Clicks:
+      %label{:for => 'shortener[max_clicks]', :class => 'control-label advanced'} Max Clicks:
       .controls
-        %input{:type => 'text', :name => 'shortener[max-clicks]', :class => 'text advanced'}
+        %input{:type => 'text', :name => 'shortener[max_clicks]', :class => 'text advanced'}
     .control-group.advanced
-      %label{:for => 'shortener[desired-short]', :class => 'control-label advanced'} Desired Short:
+      %label{:for => 'shortener[desired_short]', :class => 'control-label advanced'} Desired Short:
       .controls
-        %input{:type => 'text', :name => 'shortener[desired-short]', :class => 'text advanced'}
+        %input{:type => 'text', :name => 'shortener[desired_short]', :class => 'text advanced'}
     .control-group.advanced
-      %label{:for => 'shortener[allow-override]', :class => 'control-label'} Allow Random Override:
+      %label{:for => 'shortener[allow_override]', :class => 'control-label'} Allow Random Override:
       .controls
-        %input{:type => 'checkbox', :name => 'shortener[allow-override]', :class => 'text advanced', :value => 'true'}
+        %input{:type => 'checkbox', :name => 'shortener[allow_override]', :class => 'text advanced', :value => 'true'}
     :javascript
       $(function(){
         $('.advanced').addClass('hide');
@@ -37,7 +37,7 @@
           });
 
           /* Send the data using post and put the results in a div */
-          $.post( this.action + '.json', formData, function( data ) {
+          $.post( this.action , formData, function( data ) {
             $( "#display-add-new-shorts" ).append( data.html );
             }
           );

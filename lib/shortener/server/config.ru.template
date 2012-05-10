@@ -1,2 +1,44 @@
-require './main.rb'
-run Shortener::Server.new
+require 'sinatra'
+require 'redis-namespace'
+require File.join(File.dirname(__FILE__), 'server', 'helpers')
+require File.join(File.dirname(__FILE__), 'server', 'brief')
+
+require File.join(File.dirname(__FILE__), 'configuration')
+$conf = Shortener::Configuration.new
+
+require File.join(File.dirname(__FILE__), 'server', 'api', 'v1')
+
+require File.join(File.dirname(__FILE__), 'server', 'views') if $conf.views
+
+if $conf.authenticate?
+  require 'warden'
+  require File.join(File.dirname(__FILE__), 'server', 'warden')
+  require File.join(File.dirname(__FILE__), 'server', 'user')
+  require File.join(File.dirname(__FILE__), 'server','auth')
+  use Rack::Session::Cookie
+  use Warden::Manager do |manager|
+    manager.default_strategies :password
+    manager.failure_app = Shortener::Server::Auth
+  end
+end
+
+uri = $conf.redistogo_url
+_redis = Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
+$redis = Redis::Namespace.new(:shortener, redis: _redis)
+
+class Shortener::Server::Instance < Sinatra::Base
+
+  use Shortener::Server::Auth if $conf.authenticate?
+  use Shortener::Server::Views if $conf.views
+  use Shortener::Server::Api::V1
+
+  before do
+    if $conf.auth_route?(env['REQUEST_PATH']) && !env['warden'].authenticated?
+      session['REDIRECT_TO'] = env['REQUEST_PATH']
+      redirect('/u/login')
+    end
+  end if $conf.authenticate?
+
+end
+
+run Shortener::Server::Instance.new
