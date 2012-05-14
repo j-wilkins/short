@@ -5,22 +5,38 @@
       %tr
         %th Shortened
         %th Full Url
-        %th Set Count
-        %th Click Count
-        %th TTL
-        %th Max Clicks
+        %th.visible-desktop Set Count
+        %th.hidden-phone Click Count
+        %th.visible-desktop TTL
+        %th.hidden-phone Max Clicks
     %tbody
       - @shortens.each do |short|
         %tr
           %td= short['shortened']
-          %td
+          %td.shortenWhenSmall
             %a{href: short['url']}= short['url'][0..50] + ((short['url'].length > 50) ? '...' : '')
-          %td= short['set_count']
-          %td= short['click_count'] || 0
-          %td= ttl_display(short['expire'])
-          %td= short['max-clicks'] || "&infin;"
+          %td.visible-desktop= short['set_count']
+          %td.hidden-phone= short['click_count'] || 0
+          %td.visible-desktop= ttl_display(short['expire'])
+          %td.hidden-phone= short['max-clicks'] || "&infin;"
           %td
             %a{href: "/api/v1/delete?id=#{short['shortened']}", class: 'delete-button'}
               %img{src: '/images/delete-icon.png', alt: 'delete!', width: '16px', height: '16px'}
-          %td= clippy("#{base_url}/#{short['shortened']}")
+          %td
+            %a.btn.btn-mini{rel: 'popover', 'data-content' => "<input type='text' value='#{base_url}/#{short['shortened']}' data-id='#{short['shortened']}'></input>", 'data-placement' => 'top', 'data-trigger' => 'manual', 'data-toggle' => 'button', 'data-title' => "CMD/CTL + C to Copy", 'data-id'=> short['shortened']} Copy
+            -#clippy("#{base_url}/#{short['shortened']}")
 
+:javascript
+
+  //$('a[rel="popover"]').popover({trigger: 'focus', placement: 'top'});
+  $('a[rel="popover"]').popover();
+  $('a.btn-small').button();
+  $('a[rel="popover"]').live("click", function(){
+    $(this).popover("toggle");
+    $(".popover-content p input:text").select();
+  });
+  $(".popover-content p input:text").live('copy cut', function(){
+    $('a[rel="popover"]').popover('hide');
+    var sel = 'a[data-id="'+$(this).data('id')+'"]';
+    $(sel).button('toggle');
+  });

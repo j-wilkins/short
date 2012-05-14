@@ -3,5 +3,5 @@
     %div.span2{class: 'offset1'}
       %h4= @url
     %div.span2
-      = clippy(@url, '#dff0d8')
+      %a.btn.btn-mini{rel: 'popover', 'data-content' => "<input type='text' value='#{@url}' data-id='#{@data['shortened']}-d'></input>", 'data-placement' => 'top', 'data-trigger' => 'manual', 'data-toggle' => 'button', 'data-title' => "CMD/CTL + C to Copy", 'data-id'=> "#{@data['shortened']}-d"} Copy
     %a.close{'data-dismiss' => 'alert', href: '#'}×

@@ -16,34 +16,42 @@
     %div.navbar
       %div.navbar-inner
         %div.container
+
+          %a.btn.btn-navbar{"data-toggle"=> "collapse", "data-target" => ".nav-collapse"}
+            %span.icon-bar
+            %span.icon-bar
+            %span.icon-bar
+
           %a{class: 'brand', href: "/"} Shortener
-          %ul.nav
-            - if available?('add')
-              %li
-                %form{:id => 'nav-add-form',:name => "shortener", :action => "/api/v1/add", :method => "post", :class => 'navbar-search pull-left'}
-                  %input{:type => "text", :name => "shortener[url]", :class => "search-query span2", placeholder: 'Shorten'}
-            - if available?('index')
-              %li
-                %a{href: '/v/index'} Index
-            - if available?('aadd')
-              %li
-                %a.colorbox{href: '/v/add'} Advanced Add
-            - if $conf.s3_available && available?('upload')
-              %li
-                %a.colorbox{href: '/v/upload'} Upload
-          %ul.nav.pull-right
-            - if $conf.authenticate?
-              - if logged_in?
-                %li.pull-right
-                  %a{href: '/api/v1/u/logout', class: 'pull-right'} Log Out
-                %li.pull-right
-                  %a{href: '/u/edit', class: 'pull-right'} Edit Me
-              - else
-                %li.pull-right
-                  %a{href: '/u/login', class: 'pull-right'} Log In
-                - if $conf.allow_signup
+
+          .nav-collapse
+            %ul.nav
+              - if available?('add')
+                %li
+                  %form{:id => 'nav-add-form',:name => "shortener", :action => "/api/v1/add", :method => "post", :class => 'navbar-search pull-left'}
+                    %input{:type => "text", :name => "shortener[url]", :class => "search-query span2", placeholder: 'Shorten'}
+              - if available?('index')
+                %li
+                  %a{href: '/v/index'} Index
+              - if available?('aadd')
+                %li
+                  %a.colorbox{href: '/v/add'} Advanced Add
+              - if $conf.s3_available && available?('upload')
+                %li
+                  %a.colorbox{href: '/v/upload'} Upload
+            %ul.nav.pull-right
+              - if $conf.authenticate?
+                - if logged_in?
                   %li.pull-right
-                    %a{href: '/u/signup', class: 'pull-right'} Sign Up
+                    %a{href: '/api/v1/u/logout', class: 'pull-right'} Log Out
+                  %li.pull-right
+                    %a{href: '/u/edit', class: 'pull-right'} Edit Me
+                - else
+                  %li.pull-right
+                    %a{href: '/u/login', class: 'pull-right'} Log In
+                  - if $conf.allow_signup
+                    %li.pull-right
+                      %a{href: '/u/signup', class: 'pull-right'} Sign Up
 
 
     #main.container(style="margin-top: 40px;")
