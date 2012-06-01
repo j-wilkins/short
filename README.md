@@ -9,6 +9,20 @@ for obvious reasons, the demo is configured with S3 disabled. However, if you ar
 to play around with `short` follow the instructions below and use `http://shortener1.heroku.com`
 as your the url you want to use.
 
+## Version 0.6.0
+
+v0.6.0 is pretty much a complete rewrite of most things short. The server has
+been divided up in to smaller chunks, seperating the shortening service from the
+view front-end, and adding an optional authentication layer, and then the short
+client was patched to use these changes. v0.6.0 will hopefully wind up being 
+pretty close to version 1.0, but before then I want to put together some test
+cases and rewrite the docs to accuarately reflect the new server structure. 
+
+There shouldn't be any configuration changes most people need to make, unless 
+you want to take advantage of the new features, if you'd like to check these out
+before I can improve the docs, once again the `Configuration` class will be your 
+friend.
+
 ## Upgrading to 0.5.0
 
 v0.5.0 updates how shortener stores some data. To assist in keeping your data,
