@@ -15,6 +15,7 @@ class Shortener
       before do
         if $conf.auth_route?(env['PATH_INFO']) && !env['warden'].authenticated?
           session['REDIRECT_TO'] = env['PATH_INFO']
+          return 401, {}, "Not Authorized, specify your auth token." if request.path.include?('.json')
           redirect('/u/login')
         end
       end if $conf.authenticate?

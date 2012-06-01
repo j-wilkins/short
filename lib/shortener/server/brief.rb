@@ -4,7 +4,7 @@ class Shortener
     class Brief
 
       class << self
-        
+
         def all
           $redis.keys('data:*').map do |key|
             short = $redis.hgetall(key)
@@ -87,8 +87,8 @@ class Shortener
           bad! 'Missing content type.' unless type = params['type']
           fname = params['file_name'].gsub(' ', '+')
           url = "https://s3.amazonaws.com/#{$conf.s3_bucket}/#{$conf.s3_key_prefix}/#{fname}"
-          data = {'s3' => true, 'extension' => File.extname(fname)[1..-1], 
-            'description' => params.delete('description'), 
+          data = {'s3' => true, 'extension' => File.extname(fname)[1..-1],
+            'description' => params.delete('description'),
             'name' => params.delete('name'), 'type' => params.delete('type')}
           get_short_key(url, params, data)
         end
@@ -134,7 +134,7 @@ class Shortener
         end
 
         def nope!(message = 'No luck.')
-          throw :halt, 404, {}, message
+          throw :halt, [404, {}, message]
         end
 
         def generate_short

@@ -34,6 +34,9 @@ class Shortener
         check_env
         @options = @options.merge!(opts)
         @options[:DEFAULT_URL] ||= '/index'
+        if @options[:SHORTENER_URL] && @options[:SHORTENER_URL][-1] == '/'
+          @options[:SHORTENER_URL].chop! 
+        end
         @options[:SHORTENER_NS] ||= :shortener
         @options[:VIEWS] = !(@options[:VIEWS] == false || @options[:VIEWS] == 'false')
         @options[:ALLOW_SIGNUP] = @options.has_key?(:ALLOW_SIGNUP)
@@ -181,10 +184,8 @@ class Shortener
         case end_point
         when :fetch
           opts
-        when :delete
-          "#{end_point}/#{opts}"
         else
-          end_point.to_s
+          "api/v1/#{end_point}"
         end
       end
 

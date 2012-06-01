@@ -4,3 +4,5 @@ source "http://rubygems.org"
 gem 'sinatra'
 gem 'redis-namespace'
 gem 'haml'
+gem 'warden'
+gem 'ruby-hmac'

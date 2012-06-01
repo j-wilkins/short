@@ -75,6 +75,7 @@ def show_index
     index = Shortener.index
   rescue Shortener::NetworkException => boom
     puts boom.message
+    exit
   end
   short_summary = index.map do |v|
     url = v['url'].length > 38 ? "#{v['url'][0..25]}...#{v['url'][-10..-1]}" : "#{v['url']}"
@@ -174,6 +175,8 @@ when 'delete'
   do_action(:delete, ARGV[1])
 when '-v', '--version'
   puts "short version #{Shortener::VERSION}"
+when '-h', '--help'
+  usage
 else
   do_action(:shorten, ARGV[0])
 end

@@ -11,7 +11,7 @@ class Shortener
 
       # set a shortened url
       def shorten(url, conf = nil)
-        opts = {'shortener' =>  {'url' => url}.to_json}
+        opts = {"shortener[url]" => "#{url}"}
         response = request(:post, :add, conf, opts)
         if response.is_a?(Net::HTTPOK)
           return Short.new(response.body, conf)
@@ -40,7 +40,7 @@ class Shortener
 
       # delete a short
       def delete(short, conf = nil)
-        response = request(:get, :delete, conf, short)
+        response = request(:post, :delete, conf, {id: short})
         Short.new(response.body, conf)
       end
 

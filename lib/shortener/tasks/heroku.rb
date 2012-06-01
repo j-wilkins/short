@@ -117,6 +117,7 @@ namespace :short do
         recursively_remove_files(Dir.pwd)
       else
         puts "working directory not clean, stash or commit your changes"
+        exit
       end
       $existing_repo = true
       Rake::Task[:'short:heroku:build'].execute

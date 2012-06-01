@@ -15,12 +15,13 @@ class Shortener
 
       helpers do
         def _response(views, api)
-          if $conf.views && !(params[:format] == '.json')
-            return views.call if views.is_a?(Proc) 
+          if $conf.views && !(params[:format] == '.json' || 
+                              request.env['REQUEST_PATH'].include?('.json'))
+            return views.call if views.is_a?(Proc)
             redirect views
           else
             content_type :json
-            views.is_a?(Proc) ? api.call.to_json : api.to_json
+            api.is_a?(Proc) ? api.call.to_json : api.to_json
           end
         end
       end
