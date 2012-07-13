@@ -2,8 +2,8 @@
 class Shortener
   class Short
 
-    SHORT_KEYS = [:url, :shortened, :type, :ext, :s3, :'click-count', :'max-count',
-      :'set-count', :'expire-time', :sha]
+    SHORT_KEYS = [:url, :shortened, :type, :ext, :s3, :'click_count', :'max_count',
+      :'set_count', :'expire_time', :sha]
 
     attr_reader :data
 
@@ -12,7 +12,7 @@ class Shortener
       # set a shortened url
       def shorten(url, conf = nil)
         opts = {"shortener[url]" => "#{url}"}
-        response = request(:post, :add, conf, opts)
+        response = request(:post, :add, opts, conf)
         if response.is_a?(Net::HTTPOK)
           return Short.new(response.body, conf)
         else
@@ -22,7 +22,7 @@ class Shortener
 
       # get data for a short, including full url.
       def fetch(short, conf = nil)
-        response = request(:get, :fetch, conf, short)
+        response = request(:get, :fetch, short, conf)
         Short.new(response.body, conf)
       end
 
@@ -32,7 +32,7 @@ class Shortener
 
       # fetch data on multiple shorts
       def index(start = 0, stop = nil, conf = nil)
-        response = request(:get, :index, conf)
+        response = request(:get, :index, nil, conf)
         data = JSON.parse(response.body)
         shorts = data.map {|sh| Short.new(sh, conf)}
         shorts
@@ -40,13 +40,21 @@ class Shortener
 
       # delete a short
       def delete(short, conf = nil)
-        response = request(:post, :delete, conf, {id: short})
+        response = request(:post, :delete, {id: short}, conf)
         Short.new(response.body, conf)
       end
 
+      # fetch user data
+      def login(username, password, conf = nil)
+        response = request(:post, :login, {'user[username]' => username,
+          'user[password]' => password}, conf)
+        user = JSON.parse(response.body)
+      end 
+
       # build a request based on configurations
-      def request(type, end_point, conf = nil, args = nil)
+      def request(type, end_point, args = nil, conf = nil)
         config = conf || Shortener::Configuration.current
+        args = add_auth(args) if config.auth_route?(uri)
         response = case type
         when :post
           Net::HTTP.post_form(config.uri_for(end_point), args)
@@ -55,6 +63,11 @@ class Shortener
         end
         raise NetworkException.new(response.body) if response.kind_of?(Net::HTTPClientError)
         response
+      end
+
+      def add_auth(args, conf = Shortener::Configuration.current)
+        args ||= Hash.new
+        args.update({'token' => conf.user_token})
       end
 
     end # => ClassMethods
@@ -106,8 +119,7 @@ class Shortener
     end
 
     SHORT_KEYS.each do |key|
-      name = key.to_s.include?('-') ? key.to_s.gsub('-', '_').to_sym : key
-      define_method name do
+      define_method key do
         @data[key]
       end
     end
@@ -129,10 +141,10 @@ class Shortener
 
       # turn string numbers in to actual numbers.
       def normalize_data
-        [:'click-count', :'max-count', :'set-count'].each do |k|
+        [:click_count, :max_count, :set_count].each do |k|
           @data[k] = @data[k].to_i
         end
-        @data[:'click-count'] ||= 0
+        @data[:click_count] ||= 0
       end
 
       # parse JSON safely.

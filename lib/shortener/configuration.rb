@@ -1,4 +1,5 @@
 require 'uri'
+require 'cgi'
 require 'yaml'
 require 'redis-namespace'
 
@@ -17,11 +18,14 @@ class Shortener
     OPTIONS = [:SHORTENER_URL, :DEFAULT_URL, :REDISTOGO_URL, :S3_KEY_PREFIX,
       :S3_ACCESS_KEY_ID, :S3_SECRET_ACCESS_KEY, :S3_DEFAULT_ACL, :S3_BUCKET,
       :DOTFILE_PATH, :S3_ENABLED, :SHORTENER_NS, :REQUIRE_AUTH, :ALLOW_SIGNUP,
-      :VIEWS]
+      :VIEWS, :USER_TOKEN]
 
-    HEROKU_IGNORE = [:DOTFILE_PATH, :SHORTENER_URL, :REDISTOGO_URL, :REQUIRE_AUTH]
+    HEROKU_IGNORE = [:DOTFILE_PATH, :SHORTENER_URL, :REDISTOGO_URL, :REQUIRE_AUTH,
+      :USER_TOKEN]
 
-    END_POINTS = [:add, :fetch, :upload, :index, :delete]
+    AUTH_END_POINTS = [:username_available, :create, :login, :update, :reset_token]
+
+    END_POINTS = [:add, :fetch, :upload, :index, :delete, :login, :reset_token]
 
     #store any paassed options and parse ~/.shortener if exists
     # priority goes dotfile < env < passed option
@@ -35,7 +39,7 @@ class Shortener
         @options = @options.merge!(opts)
         @options[:DEFAULT_URL] ||= '/index'
         if @options[:SHORTENER_URL] && @options[:SHORTENER_URL][-1] == '/'
-          @options[:SHORTENER_URL].chop! 
+          @options[:SHORTENER_URL] = @options[:SHORTENER_URL].chop
         end
         @options[:SHORTENER_NS] ||= :shortener
         @options[:VIEWS] = !(@options[:VIEWS] == false || @options[:VIEWS] == 'false')
@@ -54,11 +58,26 @@ class Shortener
     # return a URI for an endpoint based on this configuration
     def uri_for(end_point, opts = nil)
       if END_POINTS.include?(end_point.to_sym)
-        path = path_for(end_point, opts)
-        URI.parse("#{@options[:SHORTENER_URL]}/#{path}.json")
+        if end_point == :fetch
+          path = opts.to_s
+        else
+          path = "api/v1/"
+          path += 'u/' if AUTH_END_POINTS.include?(end_point)
+          path += end_point.to_s
+        end
+
+        uri = URI.parse("#{@options[:SHORTENER_URL]}/#{path}.json")
+
+        unless opts.nil? || end_point == :fetch
+          query = opts.collect { |k,v| "#{k}=#{CGI::escape(v.to_s)}" }.join('&')
+          uri.query = query
+        end
+
       else
         raise "BAD ENDPOINT: #{end_point} is not a valid shortener end point."
       end
+
+      uri
     end
 
     # return a string ENV's for command line use.
@@ -156,6 +175,7 @@ class Shortener
 
     # check if this endpoint needs auth
     def auth_route?(url)
+      url = url.path if url.respond_to?(:path)
       ep = url.split('/').last
       return false if ep.nil?
       ep.gsub!('.json', '')
@@ -164,30 +184,20 @@ class Shortener
 
     private
 
-      # Parse the YAML dotfile if one exists
-      def check_dotfile
-        dotfile = @options[:DOTFILE_PATH] || File.join(ENV['HOME'], ".shortener")
-        if File.exists?(dotfile)
-          @options = @options.merge!(YAML::load_file(dotfile))
-        end
+    # Parse the YAML dotfile if one exists
+    def check_dotfile
+      dotfile = @options[:DOTFILE_PATH] || File.join(ENV['HOME'], ".shortener")
+      if File.exists?(dotfile)
+        @options = @options.merge!(YAML::load_file(dotfile))
       end
+    end
 
-      # Check our environment for any overrides.
-      def check_env
-        OPTIONS.each do |opt|
-          @options[opt] = ENV[opt.to_s] unless ENV[opt.to_s].nil?
-        end
+    # Check our environment for any overrides.
+    def check_env
+      OPTIONS.each do |opt|
+        @options[opt] = ENV[opt.to_s] unless ENV[opt.to_s].nil?
       end
-
-      # do the logic necessary to setup a route for <end_point>
-      def path_for(end_point, opts = nil)
-        case end_point
-        when :fetch
-          opts
-        else
-          "api/v1/#{end_point}"
-        end
-      end
+    end
 
   end
 end
