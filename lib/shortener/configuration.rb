@@ -80,6 +80,11 @@ class Shortener
       uri
     end
 
+    def logout
+      @options.delete(:USER_TOKEN)
+      self
+    end
+
     # return a string ENV's for command line use.
     def to_params
       ret = Array.new
@@ -176,6 +181,7 @@ class Shortener
     # check if this endpoint needs auth
     def auth_route?(url)
       url = url.path if url.respond_to?(:path)
+      url = url.to_s unless url.is_a?(String)
       ep = url.split('/').last
       return false if ep.nil?
       ep.gsub!('.json', '')

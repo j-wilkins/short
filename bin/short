@@ -123,41 +123,84 @@ def usage
      short www.google.com
 
   and the result would be a short for www.google.com
+
+  if your shortener instance has authentication enabled, you
+  can use:
+    login|sign_in    to fetch your authentication token.
+    logout|sign_out  to remove your authentication token.
 EOU
 end
 
-def write_configuration
+def prompt_configuration
   store = ARGV.shift(2)
   puts "the Short command line tool works best with a config file, ~/.shortener."
-  puts "We didn't find on, if you'd like we can write one now. (y|n)"
+  puts "We didn't find one, if you'd like we can write one now. (y|n)"
   if gets.chomp == 'y'
     opts = Hash.new
     puts "sweet. What is the URL for your shortener server?"
     opts[:SHORTENER_URL] = gets.chomp
     puts "for your shortener server, what would you like the default redirect to be? (defaults to /index)"
     opts[:DEFAULT_URL] = gets.chomp
-    puts "are you going to be running the server on this computer? (y|n)"
-    if gets.chomp == 'y'
+    puts "are you going to be running the server on this computer, or will this be the computer you deploy from? (y|n)"
+    if deploy = gets.chomp == 'y'
       puts "what url would you like to use for redis? (ex. redis://localhost:6379)"
       opts[:REDISTOGO_URL] = gets.chomp
       puts "would you like to enabled S3 uploads? (y|n)"
       if gets.chomp == 'y'
         opts[:S3_ENABLED] = true
-        puts "You will want to set the following options, either in your ENV of edit this config:"
+        puts "You will want to set the following options, either in your ENV or edit this config file:"
         puts "S3_KEY_PREFIX, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_DEFAULT_ACL, S3_BUCKET\n\n"
       end
     end
+    if deploy
+      puts "Would you like to use the provided authentication module?"
+      if gets.chomp.downcase == 'y'
+        puts "What routes would you like to require authentication for?"
+        puts "you can specify any of [add, aadd(advanced add), index, upload, delete], seperated by commas"
+        opts[:REQUIRE_AUTH] = gets.chomp.split(',').map {|a| a.upcase.to_sym}
+        puts "would you like to allow signup through the site?"
+        opts[:ALLOW_SIGNUP] = gets.chomp == 'y'
+      end
+    end
     puts "nice. for now, that's all we need. writing file...\n\n"
-    File.open(@conf_file, 'w') {|f| f.puts opts.to_yaml}
+    write_configuration(opts)
   else
     puts "fine, but any errors aren't my fault.\n\n"
   end
   ARGV.concat(store)
 end
 
+def write_configuration(conf)
+  conf = conf.options if conf.is_a?(Shortener::Configuration)
+  File.open(@conf_file, 'w') {|f| f.puts conf.to_yaml}
+end
+
+def sign_in
+  store = ARGV.shift(2)
+  puts "Please enter your username"
+  username = gets.chomp
+  begin
+    system "stty -echo"
+    puts "Please enter your password"
+    pass = gets.chomp
+  ensure
+    system "stty -echo"
+  end
+  user = Shortener::Short.login(username, pass)
+  conf = Shortener::Configuration.new(:USER_TOKEN => user['token'])
+  write_configuration(conf)
+  puts "You've been logged in."
+  ARGV.concat(store)
+end
+
+def sign_out
+  write_configuration(Shortener::Configuration.new.logout)
+  puts "You've been logged out"
+end
+
 @conf_file = ENV['DOTFILE_PATH'] || File.join(ENV['HOME'], ".shortener")
 
-write_configuration unless File.exists?(@conf_file)
+prompt_configuration unless File.exists?(@conf_file)
 
 case ARGV[0]
 when 'shorten'
@@ -169,10 +212,13 @@ when 'server'
 when 'index'
   show_index
 when 'build'
-  #do_action(:build, ARGV[1])
   build
 when 'delete'
   do_action(:delete, ARGV[1])
+when 'login', 'sign_in'
+  sign_in
+when 'logout', 'sign_out'
+  sign_out
 when '-v', '--version'
   puts "short version #{Shortener::VERSION}"
 when '-h', '--help'

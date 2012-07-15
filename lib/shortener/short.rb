@@ -54,7 +54,7 @@ class Shortener
       # build a request based on configurations
       def request(type, end_point, args = nil, conf = nil)
         config = conf || Shortener::Configuration.current
-        args = add_auth(args) if config.auth_route?(uri)
+        args = add_auth(args) if config.auth_route?(end_point)
         response = case type
         when :post
           Net::HTTP.post_form(config.uri_for(end_point), args)
