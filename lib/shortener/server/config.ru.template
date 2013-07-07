@@ -1,20 +1,20 @@
 require 'sinatra'
 require 'redis-namespace'
-require File.join(File.dirname(__FILE__), 'server', 'helpers')
-require File.join(File.dirname(__FILE__), 'server', 'brief')
+require File.join(File.dirname(__FILE__), 'helpers')
+require File.join(File.dirname(__FILE__), 'brief')
 
-require File.join(File.dirname(__FILE__), 'configuration')
+require File.join(File.dirname(__FILE__), '../configuration')
 $conf = Shortener::Configuration.new
 
-require File.join(File.dirname(__FILE__), 'server', 'api', 'v1')
+require File.join(File.dirname(__FILE__), 'api', 'v1')
 
-require File.join(File.dirname(__FILE__), 'server', 'views') if $conf.views
+require File.join(File.dirname(__FILE__), 'views') if $conf.views
 
 if $conf.authenticate?
   require 'warden'
-  require File.join(File.dirname(__FILE__), 'server', 'warden')
-  require File.join(File.dirname(__FILE__), 'server', 'user')
-  require File.join(File.dirname(__FILE__), 'server','auth')
+  require File.join(File.dirname(__FILE__), 'warden')
+  require File.join(File.dirname(__FILE__), 'user')
+  require File.join(File.dirname(__FILE__), 'auth')
   use Rack::Session::Cookie
   use Warden::Manager do |manager|
     manager.default_strategies :password
