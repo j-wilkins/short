@@ -11,7 +11,7 @@ class Shortener
       end
 
       def base_url
-        @base_url ||= "#{request.env['rack.url_scheme']}://#{request.env['HTTP_HOST']}"
+        @base_url ||= "#{request.env['rack.url_scheme']}://#{request.env['SERVER_NAME']}"
       end
 
       def clippy(text, bgcolor='#FFFFFF')
